@@ -669,14 +669,15 @@ export default function CryptoPayment() {
         }
 
         setTimeout(() => {
-          // For competition purchases, go to contract signing first
+          // For competition purchases, go to user details submission first
           if (challengeType === 'COMPETITION') {
-            navigate('/contract-signing', {
+            navigate('/user-details', {
               state: {
                 accountSize,
                 challengeType,
                 paymentId: payment.id,
-                userChallenge: userChallenge
+                userChallenge: userChallenge,
+                hasAddOn
               }
             });
           } else {

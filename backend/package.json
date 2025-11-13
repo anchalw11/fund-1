@@ -27,6 +27,7 @@
     "hpp": "^0.2.3",
     "jsonwebtoken": "^9.0.2",
     "metaapi.cloud-sdk": "^27.2.0",
+    "multer": "^2.0.2",
     "node-fetch": "^3.3.2",
     "nodemailer": "^6.10.1",
     "pdfkit": "^0.13.0",

@@ -64,55 +64,38 @@ export default function Signup() {
     if (result.success) {
       console.log('✅ Signup successful');
 
-      // Store verification code if available (for development testing)
+      // Always store verification code for testing (will be available even if email fails)
       if (result.verificationCode) {
         localStorage.setItem('verificationCode', result.verificationCode);
+        console.log('🔑 Verification code stored for testing:', result.verificationCode);
       }
 
-      // If verification was sent, redirect to email verification
-      if (result.verificationSent) {
-        console.log('Email verification sent, redirecting to verification page');
+      // Always redirect to email verification page (required for all users)
+      console.log('Redirecting to email verification (required for all users)');
 
-        // Store email for verification page
-        localStorage.setItem('verificationEmail', formData.email);
+      // Store email for verification page
+      localStorage.setItem('verificationEmail', formData.email);
 
-        // If there's a pending payment, store it for after verification
-        if (returnTo && accountSize && challengeType && originalPrice !== undefined) {
-          console.log('Storing pending payment data');
-          localStorage.setItem('pendingPayment', JSON.stringify({
-            accountSize,
-            challengeType,
-            originalPrice,
-            isPayAsYouGo,
-            phase2Price
-          }));
-        }
-
-        navigate('/email-verification', {
-          state: { email: formData.email },
-          replace: true
-        });
-      } else {
-        // Verification not sent (development mode), redirect to dashboard or returnTo
-        console.log('Email verification not sent (development mode), redirecting to dashboard');
-
-        if (returnTo && accountSize && challengeType && originalPrice !== undefined) {
-          // If there's a pending payment, redirect there
-          navigate(returnTo, {
-            state: {
-              accountSize,
-              challengeType,
-              originalPrice,
-              isPayAsYouGo,
-              phase2Price
-            },
-            replace: true
-          });
-        } else {
-          // No pending payment, redirect to dashboard
-          navigate('/dashboard', { replace: true });
-        }
+      // If there's a pending payment, store it for after verification
+      if (returnTo && accountSize && challengeType && originalPrice !== undefined) {
+        console.log('Storing pending payment data');
+        localStorage.setItem('pendingPayment', JSON.stringify({
+          accountSize,
+          challengeType,
+          originalPrice,
+          isPayAsYouGo,
+          phase2Price
+        }));
       }
+
+      navigate('/email-verification', {
+        state: {
+          email: formData.email,
+          verificationSent: result.verificationSent,
+          message: result.message
+        },
+        replace: true
+      });
     } else {
       setError(result.error || 'Registration failed');
       setLoading(false);

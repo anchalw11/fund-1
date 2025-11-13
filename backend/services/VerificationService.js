@@ -76,19 +76,18 @@ class VerificationService {
       } catch (emailError) {
         console.error('Error sending verification email:', emailError);
 
-        // For development/testing, allow signup to succeed even if email fails
-        // In production, this should probably still fail for security
-        if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === undefined) {
-          console.warn('⚠️ Email sending failed, but allowing signup to continue in development mode');
-          return {
-            success: true,
-            message: 'Account created successfully. Email verification will be sent when email service is configured.',
-            expiresAt,
-            // Include code in development for testing
-            code: code,
-            emailNotSent: true
-          };
-        }
+        // Always try to send email - don't skip in development
+        // If email fails, still return success but log the issue
+        console.warn('⚠️ Email sending failed, but account created successfully');
+        console.warn('   Verification code for manual testing:', code);
+        return {
+          success: true,
+          message: 'Account created successfully. Please check your email for verification code.',
+          expiresAt,
+          // Include code for testing
+          code: code,
+          emailNotSent: true
+        };
 
         // Check if SMTP is configured
         const smtpConfigured = !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD);

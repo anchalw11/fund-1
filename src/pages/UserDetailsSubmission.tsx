@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Upload, Video, Image, Check, AlertCircle, Loader, 
   Instagram, Twitter, Youtube, Linkedin, Facebook,
@@ -10,10 +10,14 @@ import { supabase } from '../lib/db';
 
 export default function UserDetailsSubmission() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const videoRef = useRef<HTMLInputElement>(null);
   const screenshotRef = useRef<HTMLInputElement>(null);
+
+  // Get hasAddOn from location state
+  const hasAddOn = location.state?.hasAddOn || false;
 
   const [formData, setFormData] = useState({
     instagram: '',
@@ -24,6 +28,10 @@ export default function UserDetailsSubmission() {
     otherSocial: '',
     videoIntro: null as File | null,
     writtenIntro: '',
+    question1: '',
+    question2: '',
+    question3: '',
+    question4: '',
     screenshots: [] as File[],
   });
 
@@ -44,12 +52,14 @@ export default function UserDetailsSubmission() {
       setErrors(prev => ({ ...prev, video: '' }));
     } else {
       const fileArray = Array.from(files);
-      if (fileArray.length < 2) {
-        setErrors(prev => ({ ...prev, screenshots: 'Please upload at least 2 screenshots' }));
-        return;
-      }
-      setFormData(prev => ({ ...prev, screenshots: fileArray }));
-      setErrors(prev => ({ ...prev, screenshots: '' }));
+      setFormData(prev => {
+        const newScreenshots = [...prev.screenshots, ...fileArray];
+        // Check if we now have at least 2 screenshots
+        if (newScreenshots.length >= 2) {
+          setErrors(prevErrors => ({ ...prevErrors, screenshots: '' }));
+        }
+        return { ...prev, screenshots: newScreenshots };
+      });
     }
   };
 
@@ -81,11 +91,12 @@ export default function UserDetailsSubmission() {
 
     if (stepNumber === 3) {
       // Video OR written intro required
-      if (!formData.videoIntro && !formData.writtenIntro.trim()) {
-        newErrors.intro = 'Please provide either a video introduction or written explanation';
+      const combinedQuestions = (formData.question1 || '') + (formData.question2 || '') + (formData.question3 || '') + (formData.question4 || '');
+      if (!formData.videoIntro && !combinedQuestions.trim()) {
+        newErrors.intro = 'Please provide either a video introduction or answer the written questions';
       }
-      if (formData.writtenIntro && formData.writtenIntro.length < 100) {
-        newErrors.intro = 'Written introduction must be at least 100 characters';
+      if (!formData.videoIntro && combinedQuestions.length < 100) {
+        newErrors.intro = 'Written answers must total at least 100 characters';
       }
     }
 
@@ -114,46 +125,63 @@ export default function UserDetailsSubmission() {
         return;
       }
 
-      // Upload files to storage
+      // Upload files via backend API
+      const formDataToSend = new FormData();
+
+      // Add screenshots
+      formData.screenshots.forEach((file, index) => {
+        formDataToSend.append('files', file);
+      });
+
+      // Add video if provided
+      if (formData.videoIntro) {
+        formDataToSend.append('files', formData.videoIntro);
+      }
+
+      // Get session for access token
+      if (!supabase) {
+        throw new Error('Database not initialized');
+      }
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+
+      // Upload via backend API
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/upload/competition-proof`, {
+        method: 'POST',
+        body: formDataToSend,
+        headers: {
+          'Authorization': `Bearer ${accessToken || ''}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const uploadResult = await response.json();
+      setUploadProgress(50);
+
+      // Parse uploaded URLs
+      const allUrls = uploadResult.urls || [];
       const screenshotUrls: string[] = [];
       let videoUrl = '';
 
-      // Upload screenshots
-      for (let i = 0; i < formData.screenshots.length; i++) {
-        const file = formData.screenshots[i];
-        const fileName = `${user.id}/screenshots/${Date.now()}_${i}.${file.name.split('.').pop()}`;
-        
-        const { data, error } = await supabase.storage
-          .from('competition-proof')
-          .upload(fileName, file);
+      // Separate screenshots and video URLs based on file type
+      allUrls.forEach((url: string) => {
+        if (url.includes('/videos/') || formData.videoIntro) {
+          videoUrl = url;
+        } else {
+          screenshotUrls.push(url);
+        }
+      });
 
-        if (error) throw error;
-        
-        const { data: urlData } = supabase.storage
-          .from('competition-proof')
-          .getPublicUrl(fileName);
-        
-        screenshotUrls.push(urlData.publicUrl);
-        setUploadProgress(((i + 1) / (formData.screenshots.length + 1)) * 100);
-      }
+      setUploadProgress(75);
 
-      // Upload video if provided
-      if (formData.videoIntro) {
-        const fileName = `${user.id}/videos/${Date.now()}.${formData.videoIntro.name.split('.').pop()}`;
-        
-        const { data, error } = await supabase.storage
-          .from('competition-proof')
-          .upload(fileName, formData.videoIntro);
-
-        if (error) throw error;
-        
-        const { data: urlData } = supabase.storage
-          .from('competition-proof')
-          .getPublicUrl(fileName);
-        
-        videoUrl = urlData.publicUrl;
-        setUploadProgress(100);
-      }
+      // Combine separate questions into written intro
+      const combinedWrittenIntro = formData.question1 || formData.question2 || formData.question3 || formData.question4
+        ? `1. Why should you win this competition?\n${formData.question1 || ''}\n\n2. Why should we hire you?\n${formData.question2 || ''}\n\n3. What makes you a great trader?\n${formData.question3 || ''}\n\n4. What are your goals?\n${formData.question4 || ''}`
+        : null;
 
       // Save to database
       const { error: dbError } = await supabase
@@ -167,8 +195,9 @@ export default function UserDetailsSubmission() {
           facebook: formData.facebook || null,
           other_social: formData.otherSocial || null,
           video_intro_url: videoUrl || null,
-          written_intro: formData.writtenIntro || null,
+          written_intro: combinedWrittenIntro,
           proof_screenshots: screenshotUrls,
+          has_addon: hasAddOn,
           submitted_at: new Date().toISOString(),
         });
 
@@ -475,21 +504,78 @@ export default function UserDetailsSubmission() {
 
               <div className="text-center text-gray-400 font-bold">- OR -</div>
 
-              {/* Written Introduction */}
-              <div className="space-y-4">
-                <label className="block text-sm font-bold text-gray-300 mb-2">
-                  <FileText className="w-4 h-4 inline mr-2" />
-                  Written Introduction (Required if no video)
-                </label>
-                <textarea
-                  value={formData.writtenIntro}
-                  onChange={(e) => setFormData(prev => ({ ...prev, writtenIntro: e.target.value }))}
-                  placeholder="Tell us:&#10;1. Why should you win this competition?&#10;2. Why should we hire you?&#10;3. What makes you a great trader?&#10;4. What are your goals?&#10;&#10;(Minimum 100 characters)"
-                  rows={8}
-                  className="w-full px-4 py-3 bg-black/50 border border-gray-700 rounded-xl focus:border-cyber-purple focus:outline-none transition-all resize-none"
-                />
-                <div className="text-sm text-gray-500 text-right">
-                  {formData.writtenIntro.length} / 100 minimum characters
+              {/* Written Introduction - Separate Columns */}
+              <div className="space-y-6">
+                <div className="text-center">
+                  <label className="block text-sm font-bold text-gray-300 mb-4">
+                    <FileText className="w-4 h-4 inline mr-2" />
+                    Written Introduction (Required if no video)
+                  </label>
+                  <p className="text-gray-400 text-sm">Please answer each question below</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Question 1 */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-cyber-purple">
+                      1. Why should you win this competition?
+                    </label>
+                    <textarea
+                      value={formData.question1 || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, question1: e.target.value }))}
+                      placeholder="Explain why you deserve to win..."
+                      rows={4}
+                      className="w-full px-4 py-3 bg-black/50 border border-gray-700 rounded-xl focus:border-cyber-purple focus:outline-none transition-all resize-none"
+                    />
+                  </div>
+
+                  {/* Question 2 */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-cyber-purple">
+                      2. Why should we hire you?
+                    </label>
+                    <textarea
+                      value={formData.question2 || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, question2: e.target.value }))}
+                      placeholder="What makes you a great fit for Fund8r..."
+                      rows={4}
+                      className="w-full px-4 py-3 bg-black/50 border border-gray-700 rounded-xl focus:border-cyber-purple focus:outline-none transition-all resize-none"
+                    />
+                  </div>
+
+                  {/* Question 3 */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-cyber-purple">
+                      3. What makes you a great trader?
+                    </label>
+                    <textarea
+                      value={formData.question3 || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, question3: e.target.value }))}
+                      placeholder="Describe your trading skills and experience..."
+                      rows={4}
+                      className="w-full px-4 py-3 bg-black/50 border border-gray-700 rounded-xl focus:border-cyber-purple focus:outline-none transition-all resize-none"
+                    />
+                  </div>
+
+                  {/* Question 4 */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-cyber-purple">
+                      4. What are your goals?
+                    </label>
+                    <textarea
+                      value={formData.question4 || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, question4: e.target.value }))}
+                      placeholder="What do you hope to achieve..."
+                      rows={4}
+                      className="w-full px-4 py-3 bg-black/50 border border-gray-700 rounded-xl focus:border-cyber-purple focus:outline-none transition-all resize-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <div className="text-sm text-gray-500">
+                    Total characters: {((formData.question1 || '') + (formData.question2 || '') + (formData.question3 || '') + (formData.question4 || '')).length} / 100 minimum
+                  </div>
                 </div>
               </div>
 

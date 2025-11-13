@@ -44,7 +44,7 @@ export default function AdminMT5() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'accounts' | 'analytics' | 'certificates' | 'competitions' | 'profiles' | 'breach' | 'affiliates' | 'propfirm'>('accounts');
+  const [activeTab, setActiveTab] = useState<'accounts' | 'analytics' | 'certificates' | 'competitions' | 'user-details' | 'profiles' | 'breach' | 'affiliates' | 'propfirm'>('accounts');
   const [phaseSubTabs, setPhaseSubTabs] = useState<{[key: string]: 'phase1' | 'phase2' | 'live'}>({});
   const [error, setError] = useState<string | null>(null);
 
@@ -363,6 +363,12 @@ export default function AdminMT5() {
               label="Competitions"
             />
             <TabButton
+              active={activeTab === 'user-details'}
+              onClick={() => setActiveTab('user-details')}
+              icon={<FileText size={18} />}
+              label="User Details"
+            />
+            <TabButton
               active={activeTab === 'profiles'}
               onClick={() => setActiveTab('profiles')}
               icon={<User size={18} />}
@@ -404,6 +410,7 @@ export default function AdminMT5() {
           {activeTab === 'analytics' && <MT5AnalyticsTab />}
           {activeTab === 'certificates' && <CertificatesTab users={users} />}
           {activeTab === 'competitions' && <CompetitionsTab users={users} />}
+          {activeTab === 'user-details' && <UserDetailsTab users={users} accounts={accounts} />}
           {activeTab === 'profiles' && <UserProfilesTab users={users} accounts={accounts} />}
           {activeTab === 'breach' && <ManualBreachTab users={users} accounts={accounts} />}
           {activeTab === 'affiliates' && <AffiliatesManagementTab />}
@@ -4542,6 +4549,512 @@ function AffiliatesManagementTab() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function UserDetailsTab({ users, accounts }: { users: any[]; accounts: MT5Account[] }) {
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [userDetails, setUserDetails] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterByAddOn, setFilterByAddOn] = useState<'all' | 'with-addon' | 'without-addon'>('all');
+
+  useEffect(() => {
+    if (selectedUser) {
+      loadUserDetails(selectedUser.id);
+    }
+  }, [selectedUser]);
+
+  const loadUserDetails = async (userId: string) => {
+    try {
+      setLoading(true);
+
+      // Load user details from competition_user_details table
+      if (!supabase) {
+        throw new Error('Supabase client is not initialized');
+      }
+
+      const { data: details, error } = await supabase
+        .from('competition_user_details')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+        console.error('Error loading user details:', error);
+      }
+
+      // Map the database fields to the expected format
+      const mappedDetails = details ? {
+        id: details.id,
+        user_id: details.user_id,
+        full_name: details.full_name || '',
+        email: details.email || '',
+        phone: details.phone || '',
+        country: details.country || '',
+        why_join_competition: details.why_join_competition || '',
+        why_hire_me: details.why_hire_me || '',
+        experience_level: details.experience_level || '',
+        instagram_link: details.instagram,
+        twitter_link: details.twitter,
+        youtube_link: details.youtube,
+        linkedin_link: details.linkedin,
+        facebook_link: details.facebook,
+        other_social_link: details.other_social,
+        video_url: details.video_intro_url,
+        video_description: details.video_description || '',
+        written_introduction: details.written_intro,
+        screenshot_urls: details.proof_screenshots || [],
+        trading_experience: details.trading_experience || '',
+        preferred_markets: details.preferred_markets || '',
+        risk_tolerance: details.risk_tolerance || '',
+        available_hours: details.available_hours || '',
+        additional_notes: details.additional_notes || '',
+        created_at: details.submitted_at,
+        updated_at: details.updated_at
+      } : null;
+
+      setUserDetails(mappedDetails);
+    } catch (error) {
+      console.error('Error loading user details:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredUsers = useMemo(() => {
+    let filtered = users.filter(user =>
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.friendly_id?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (filterByAddOn === 'with-addon') {
+      filtered = filtered.filter(user => {
+        const userAccount = accounts.find(acc => acc.user_id === user.id);
+        return userAccount && userAccount.account_size > 100000; // Assuming add-on accounts are larger
+      });
+    } else if (filterByAddOn === 'without-addon') {
+      filtered = filtered.filter(user => {
+        const userAccount = accounts.find(acc => acc.user_id === user.id);
+        return !userAccount || userAccount.account_size <= 100000;
+      });
+    }
+
+    return filtered;
+  }, [users, accounts, searchTerm, filterByAddOn]);
+
+  const getUserAccount = (userId: string) => {
+    return accounts.find(acc => acc.user_id === userId);
+  };
+
+  const hasAddOn = (userId: string) => {
+    const account = getUserAccount(userId);
+    return account && account.account_size > 100000; // Assuming add-on accounts are larger
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-3xl font-bold mb-2">
+            <GradientText>User Details Management</GradientText>
+          </h2>
+          <p className="text-white/60">View and manage user-submitted details, social media links, and competition profiles</p>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="glass-card p-6 mb-6">
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex-1 min-w-64">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" size={18} />
+              <input
+                type="text"
+                placeholder="Search by name, email, or ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => setFilterByAddOn('all')}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                filterByAddOn === 'all'
+                  ? 'bg-gradient-to-r from-electric-blue to-neon-purple text-white'
+                  : 'bg-white/5 hover:bg-white/10 text-white/70'
+              }`}
+            >
+              All Users ({users.length})
+            </button>
+            <button
+              onClick={() => setFilterByAddOn('with-addon')}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                filterByAddOn === 'with-addon'
+                  ? 'bg-gradient-to-r from-electric-blue to-neon-purple text-white'
+                  : 'bg-white/5 hover:bg-white/10 text-white/70'
+              }`}
+            >
+              With Add-on ({users.filter(u => hasAddOn(u.id)).length})
+            </button>
+            <button
+              onClick={() => setFilterByAddOn('without-addon')}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                filterByAddOn === 'without-addon'
+                  ? 'bg-gradient-to-r from-electric-blue to-neon-purple text-white'
+                  : 'bg-white/5 hover:bg-white/10 text-white/70'
+              }`}
+            >
+              Without Add-on ({users.filter(u => !hasAddOn(u.id)).length})
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Users List */}
+      <div className="glass-card p-6 mb-6">
+        <h3 className="text-xl font-bold mb-4">Users ({filteredUsers.length})</h3>
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {filteredUsers.map((user) => {
+            const account = getUserAccount(user.id);
+            const userHasAddOn = hasAddOn(user.id);
+
+            return (
+              <button
+                key={user.id}
+                onClick={() => setSelectedUser(user)}
+                className={`w-full text-left px-4 py-3 rounded-lg transition-all border ${
+                  selectedUser?.id === user.id
+                    ? 'border-electric-blue bg-electric-blue/10'
+                    : 'border-white/10 bg-white/5 hover:bg-white/10'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-electric-blue to-neon-purple flex items-center justify-center text-white font-bold">
+                      {user.full_name?.charAt(0) || user.email?.charAt(0) || '?'}
+                    </div>
+                    <div>
+                      <div className="font-semibold">{user.email}</div>
+                      <div className="text-sm text-white/60 flex items-center gap-2">
+                        <span>{user.full_name || 'N/A'}</span>
+                        <span>•</span>
+                        <span>ID: {user.friendly_id}</span>
+                        {account && (
+                          <>
+                            <span>•</span>
+                            <span>${Number(account.account_size).toLocaleString()}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {userHasAddOn && (
+                      <span className="px-2 py-1 bg-neon-purple/20 text-neon-purple rounded text-xs font-bold">
+                        ADD-ON
+                      </span>
+                    )}
+                    <span className={`px-2 py-1 rounded text-xs font-bold ${
+                      userDetails ? 'bg-neon-green/20 text-neon-green' : 'bg-gray-500/20 text-gray-400'
+                    }`}>
+                      {userDetails ? 'DETAILS' : 'NO DETAILS'}
+                    </span>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* User Details */}
+      {selectedUser && (
+        <div className="glass-card p-8">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-2xl font-bold">{selectedUser.email}</h3>
+            <div className="flex items-center gap-2">
+              {hasAddOn(selectedUser.id) && (
+                <span className="px-3 py-1 bg-neon-purple/20 text-neon-purple rounded-lg text-sm font-bold">
+                  HAS ADD-ON
+                </span>
+              )}
+              <span className="text-sm text-white/60">
+                User ID: {selectedUser.id.slice(0, 16)}...
+              </span>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-12 text-white/60">Loading user details...</div>
+          ) : userDetails ? (
+            <div className="space-y-8">
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white/5 rounded-lg p-6">
+                  <h4 className="text-lg font-bold mb-4 text-electric-blue">📋 Basic Information</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <span className="text-white/60 text-sm">Full Name:</span>
+                      <div className="font-semibold">{userDetails.full_name || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <span className="text-white/60 text-sm">Email:</span>
+                      <div className="font-semibold">{userDetails.email || selectedUser.email}</div>
+                    </div>
+                    <div>
+                      <span className="text-white/60 text-sm">Phone:</span>
+                      <div className="font-semibold">{userDetails.phone || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <span className="text-white/60 text-sm">Country:</span>
+                      <div className="font-semibold">{userDetails.country || 'N/A'}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white/5 rounded-lg p-6">
+                  <h4 className="text-lg font-bold mb-4 text-neon-purple">🎯 Competition Details</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <span className="text-white/60 text-sm">Why Join Competition:</span>
+                      <div className="font-semibold mt-1">{userDetails.why_join_competition || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <span className="text-white/60 text-sm">Why Hire Me:</span>
+                      <div className="font-semibold mt-1">{userDetails.why_hire_me || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <span className="text-white/60 text-sm">Experience Level:</span>
+                      <div className="font-semibold">{userDetails.experience_level || 'N/A'}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Social Media Links */}
+              <div className="bg-white/5 rounded-lg p-6">
+                <h4 className="text-lg font-bold mb-4 text-neon-green">🔗 Social Media Links</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {userDetails.instagram_link && (
+                    <a
+                      href={userDetails.instagram_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 bg-gradient-to-r from-pink-500/20 to-purple-500/20 rounded-lg hover:from-pink-500/30 hover:to-purple-500/30 transition-all"
+                    >
+                      <span className="text-2xl">📷</span>
+                      <div>
+                        <div className="font-semibold">Instagram</div>
+                        <div className="text-sm text-white/60">View Profile</div>
+                      </div>
+                    </a>
+                  )}
+                  {userDetails.twitter_link && (
+                    <a
+                      href={userDetails.twitter_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 bg-blue-500/20 rounded-lg hover:bg-blue-500/30 transition-all"
+                    >
+                      <span className="text-2xl">🐦</span>
+                      <div>
+                        <div className="font-semibold">Twitter</div>
+                        <div className="text-sm text-white/60">View Profile</div>
+                      </div>
+                    </a>
+                  )}
+                  {userDetails.linkedin_link && (
+                    <a
+                      href={userDetails.linkedin_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 bg-blue-600/20 rounded-lg hover:bg-blue-600/30 transition-all"
+                    >
+                      <span className="text-2xl">💼</span>
+                      <div>
+                        <div className="font-semibold">LinkedIn</div>
+                        <div className="text-sm text-white/60">View Profile</div>
+                      </div>
+                    </a>
+                  )}
+                  {userDetails.youtube_link && (
+                    <a
+                      href={userDetails.youtube_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 bg-red-500/20 rounded-lg hover:bg-red-500/30 transition-all"
+                    >
+                      <span className="text-2xl">📺</span>
+                      <div>
+                        <div className="font-semibold">YouTube</div>
+                        <div className="text-sm text-white/60">View Channel</div>
+                      </div>
+                    </a>
+                  )}
+                  {userDetails.tiktok_link && (
+                    <a
+                      href={userDetails.tiktok_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 bg-black/20 rounded-lg hover:bg-black/30 transition-all"
+                    >
+                      <span className="text-2xl">🎵</span>
+                      <div>
+                        <div className="font-semibold">TikTok</div>
+                        <div className="text-sm text-white/60">View Profile</div>
+                      </div>
+                    </a>
+                  )}
+                  {userDetails.other_social_link && (
+                    <a
+                      href={userDetails.other_social_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 bg-gray-500/20 rounded-lg hover:bg-gray-500/30 transition-all"
+                    >
+                      <span className="text-2xl">🔗</span>
+                      <div>
+                        <div className="font-semibold">Other</div>
+                        <div className="text-sm text-white/60">View Profile</div>
+                      </div>
+                    </a>
+                  )}
+                </div>
+                {(!userDetails.instagram_link && !userDetails.twitter_link && !userDetails.linkedin_link &&
+                  !userDetails.youtube_link && !userDetails.tiktok_link && !userDetails.other_social_link) && (
+                  <div className="text-center py-8 text-white/60">
+                    No social media links provided
+                  </div>
+                )}
+              </div>
+
+              {/* Screenshots */}
+              <div className="bg-white/5 rounded-lg p-6">
+                <h4 className="text-lg font-bold mb-4 text-orange-400">📸 Screenshots (Proof of Following)</h4>
+                {userDetails.screenshot_urls && userDetails.screenshot_urls.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {userDetails.screenshot_urls.map((url: string, index: number) => (
+                      <div key={index} className="bg-black/20 rounded-lg p-4">
+                        <img
+                          src={url}
+                          alt={`Screenshot ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg mb-2"
+                          onError={(e) => {
+                            e.currentTarget.src = '/placeholder-image.png';
+                          }}
+                        />
+                        <div className="text-sm text-white/60">Screenshot {index + 1}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-white/60">
+                    No screenshots uploaded
+                  </div>
+                )}
+              </div>
+
+              {/* Video Introduction */}
+              <div className="bg-white/5 rounded-lg p-6">
+                <h4 className="text-lg font-bold mb-4 text-red-400">🎬 Video Introduction</h4>
+                {userDetails.video_url ? (
+                  <div className="max-w-2xl">
+                    <video
+                      controls
+                      className="w-full rounded-lg"
+                      poster="/video-poster.png"
+                    >
+                      <source src={userDetails.video_url} type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
+                    <div className="mt-4">
+                      <h5 className="font-semibold mb-2">Why I should win & Why you should hire me:</h5>
+                      <p className="text-white/80">{userDetails.video_description || 'No description provided'}</p>
+                    </div>
+                  </div>
+                ) : userDetails.written_introduction ? (
+                  <div className="max-w-2xl">
+                    <h5 className="font-semibold mb-2">Written Introduction (Why I should win & Why you should hire me):</h5>
+                    <div className="bg-black/20 rounded-lg p-4">
+                      <p className="text-white/80 whitespace-pre-wrap">{userDetails.written_introduction}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-white/60">
+                    No video or written introduction provided
+                  </div>
+                )}
+              </div>
+
+              {/* Additional Info */}
+              <div className="bg-white/5 rounded-lg p-6">
+                <h4 className="text-lg font-bold mb-4 text-cyber-purple">📝 Additional Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <span className="text-white/60 text-sm">Trading Experience:</span>
+                    <div className="font-semibold mt-1">{userDetails.trading_experience || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <span className="text-white/60 text-sm">Preferred Markets:</span>
+                    <div className="font-semibold mt-1">{userDetails.preferred_markets || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <span className="text-white/60 text-sm">Risk Tolerance:</span>
+                    <div className="font-semibold mt-1">{userDetails.risk_tolerance || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <span className="text-white/60 text-sm">Available Hours:</span>
+                    <div className="font-semibold mt-1">{userDetails.available_hours || 'N/A'}</div>
+                  </div>
+                </div>
+                {userDetails.additional_notes && (
+                  <div className="mt-4">
+                    <span className="text-white/60 text-sm">Additional Notes:</span>
+                    <div className="font-semibold mt-1 bg-black/20 rounded-lg p-3">
+                      {userDetails.additional_notes}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Submission Info */}
+              <div className="bg-gradient-to-r from-electric-blue/10 to-neon-purple/10 rounded-lg p-6 border border-electric-blue/20">
+                <h4 className="text-lg font-bold mb-4 text-electric-blue">📊 Submission Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <span className="text-white/60 text-sm">Submitted At:</span>
+                    <div className="font-semibold">
+                      {userDetails.created_at ? new Date(userDetails.created_at).toLocaleString() : 'N/A'}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-white/60 text-sm">Last Updated:</span>
+                    <div className="font-semibold">
+                      {userDetails.updated_at ? new Date(userDetails.updated_at).toLocaleString() : 'N/A'}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-white/60 text-sm">Status:</span>
+                    <div className="font-semibold text-neon-green">COMPLETED</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">📝</div>
+              <h4 className="text-xl font-bold mb-2">No Details Submitted Yet</h4>
+              <p className="text-white/60">This user hasn't submitted their competition details yet.</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

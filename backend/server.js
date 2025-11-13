@@ -33,6 +33,7 @@ import miniChallengesRoutes from './routes/miniChallenges.js';
 import subscriptionsRoutes from './routes/subscriptions.js';
 import promotionsRoutes from './routes/promotions.js';
 import propFirmRoutes from './routes/propfirm.js';
+import uploadRoutes from './routes/upload.js';
 
 
 // Import monitoring service with error handling
@@ -132,6 +133,7 @@ app.use('/api/mini-challenges', miniChallengesRoutes);
 app.use('/api/subscriptions', subscriptionsRoutes);
 app.use('/api/promotions', promotionsRoutes);
 app.use('/api/prop-firm', propFirmRoutes);
+app.use('/api/upload', uploadRoutes);
 
 app.post('/api/reject-challenge-test', async (req, res) => {
   try {

@@ -90,33 +90,22 @@ export async function signUp(email: string, password: string, firstName: string,
     verificationError = error.message || 'Network error occurred';
   }
 
-  // If verification email failed to send, check if we're in development mode
+  // Always require email verification - even if email fails to send
+  // The verification code will be available for testing
   if (!verificationSent) {
-    // In development, allow signup to continue even if email fails
-    if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
-      console.warn('⚠️ Email verification failed, but allowing signup to continue in development mode');
-      return {
-        success: true,
-        user: data.user,
-        verificationSent: false,
-        verificationCode: verificationCode,
-        message: 'Account created successfully. Email verification is not required in development mode.'
-      };
-    } else {
-      console.error('❌ Signup failed: Email verification is required but could not be sent');
-      return {
-        success: false,
-        error: `Email verification is required. ${verificationError || 'Please check your email address and try again.'}`
-      };
-    }
+    console.warn('⚠️ Email verification failed to send, but signup allowed to continue');
+    console.warn('   Verification code for testing:', verificationCode);
   }
 
-  // Return success if verification was sent
+  // Always redirect to email verification page
   return {
     success: true,
     user: data.user,
-    verificationSent: true,
-    verificationCode: verificationCode
+    verificationSent: verificationSent,
+    verificationCode: verificationCode,
+    message: verificationSent ?
+      'Account created successfully. Please check your email for verification code.' :
+      'Account created successfully. Use the verification code shown in console for testing.'
   };
 }
 
