@@ -3,6 +3,8 @@ import multer from 'multer';
 import { supabase } from '../config/supabase.js';
 import { getCurrentUser } from '../lib/auth.js';
 
+// Upload routes for competition proof files - deployed on 2025-11-13
+
 const router = express.Router();
 
 // Configure multer for memory storage
