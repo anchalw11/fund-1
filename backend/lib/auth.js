@@ -4,29 +4,19 @@ import { supabase } from '../config/supabase.js';
 // Get current user from request
 export async function getCurrentUser(req) {
   try {
-    // Try to get user from Authorization header (JWT token)
+    // Try to get user from Authorization header (Supabase JWT token)
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
 
       try {
-        // Verify JWT token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret');
-
-        if (decoded.sub) {
-          // Get user from Supabase
-          const { data: user, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', decoded.sub)
-            .single();
-
-          if (!error && user) {
-            return user;
-          }
+        // Use Supabase to verify the JWT token
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+        if (!error && user) {
+          return user;
         }
-      } catch (jwtError) {
-        console.log('JWT verification failed:', jwtError.message);
+      } catch (supabaseError) {
+        console.log('Supabase token verification failed:', supabaseError.message);
       }
     }
 
