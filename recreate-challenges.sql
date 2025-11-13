@@ -1,0 +1,176 @@
+-- Create the challenge_types table if it doesn't exist
+CREATE TABLE IF NOT EXISTS challenge_types (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    type_name TEXT UNIQUE NOT NULL,
+    challenge_code TEXT UNIQUE,
+    challenge_name TEXT NOT NULL,
+    display_name TEXT,
+    description TEXT,
+    phase_count INTEGER DEFAULT 2,
+    is_active BOOLEAN DEFAULT TRUE,
+    profit_split DECIMAL(5,2) DEFAULT 80.00,
+    max_daily_loss DECIMAL(5,2) DEFAULT 5.00,
+    max_total_loss DECIMAL(5,2) DEFAULT 10.00,
+    min_trading_days INTEGER DEFAULT 4,
+    time_limit_days INTEGER DEFAULT 60,
+    recommended BOOLEAN DEFAULT FALSE,
+    icon TEXT,
+    color TEXT,
+    phase1_profit_target DECIMAL(5,2) DEFAULT 8.00,
+    phase2_profit_target DECIMAL(5,2) DEFAULT 5.00,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Add missing columns to the challenge_types table
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'challenge_types' AND column_name = 'display_name') THEN
+    ALTER TABLE challenge_types ADD COLUMN display_name TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'challenge_types' AND column_name = 'color') THEN
+    ALTER TABLE challenge_types ADD COLUMN color TEXT;
+  END IF;
+END $$;
+
+-- Insert challenge types (with conflict handling)
+INSERT INTO challenge_types (
+  type_name,
+  challenge_code,
+  challenge_name,
+  display_name,
+  description,
+  phase_count,
+  is_active,
+  profit_split,
+  max_daily_loss,
+  max_total_loss,
+  min_trading_days,
+  time_limit_days,
+  recommended,
+  icon,
+  color,
+  phase1_profit_target,
+  phase2_profit_target
+) VALUES
+(
+  'elite',
+  'ELITE_ROYAL',
+  'Elite Royal',
+  'Elite Royal',
+  'Premium trading challenge with the best profit split and flexible rules',
+  2,
+  true,
+  90.00,
+  5.00,
+  10.00,
+  4,
+  NULL,
+  true,
+  'Crown',
+  'purple',
+  8.00,
+  5.00
+),
+(
+  'standard',
+  'CLASSIC_2STEP',
+  'Classic 2-Step',
+  'Classic 2-Step',
+  'Traditional two-phase evaluation with balanced rules',
+  2,
+  true,
+  80.00,
+  5.00,
+  10.00,
+  4,
+  NULL,
+  true,
+  'Target',
+  'blue',
+  8.00,
+  5.00
+),
+(
+  'rapid',
+  'RAPID_FIRE',
+  'Rapid Fire',
+  'Rapid Fire',
+  'Fast-paced challenge for aggressive traders',
+  1,
+  true,
+  80.00,
+  5.00,
+  10.00,
+  0,
+  30,
+  false,
+  'Zap',
+  'orange',
+  10.00,
+  NULL
+),
+(
+  'professional',
+  'PAYG_2STEP',
+  'Pay-As-You-Go',
+  'Pay-As-You-Go',
+  'Flexible payment plan with monthly installments',
+  2,
+  true,
+  80.00,
+  5.00,
+  10.00,
+  4,
+  NULL,
+  false,
+  'CreditCard',
+  'green',
+  8.00,
+  5.00
+),
+(
+  'swing',
+  'AGGRESSIVE_2STEP',
+  'Aggressive 2-Step',
+  'Aggressive 2-Step',
+  'Higher targets for experienced traders',
+  2,
+  true,
+  80.00,
+  5.00,
+  10.00,
+  4,
+  NULL,
+  false,
+  'TrendingUp',
+  'red',
+  10.00,
+  5.00
+),
+(
+  'scaling',
+  'SWING_PRO',
+  'Scaling Plan',
+  'Scaling Plan',
+  'Start small and scale up your account size',
+  1,
+  true,
+  80.00,
+  5.00,
+  10.00,
+  0,
+  NULL,
+  false,
+  'BarChart',
+  'teal',
+  10.00,
+  NULL
+)
+ON CONFLICT (challenge_code) DO UPDATE SET
+  type_name = EXCLUDED.type_name,
+  challenge_name = EXCLUDED.challenge_name,
+  display_name = EXCLUDED.display_name,
+  description = EXCLUDED.description,
+  is_active = EXCLUDED.is_active,
+  updated_at = now();
