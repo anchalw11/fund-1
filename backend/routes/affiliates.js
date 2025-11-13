@@ -158,13 +158,25 @@ router.get('/payouts/:user_id', async (req, res) => {
       });
     }
 
-    const { data: payouts, error } = await supabase
-      .from('payouts_affiliate')
-      .select('*')
-      .eq('affiliate_id', affiliate.id)
-      .order('requested_at', { ascending: false });
+    // Try to get payouts, handle missing table gracefully
+    let payouts = [];
+    try {
+      const { data, error } = await supabase
+        .from('payouts_affiliate')
+        .select('*')
+        .eq('affiliate_id', affiliate.id)
+        .order('requested_at', { ascending: false });
 
-    if (error) throw error;
+      if (error) throw error;
+      payouts = data || [];
+    } catch (error) {
+      if (error.message && error.message.includes('does not exist')) {
+        console.warn('payouts_affiliate table does not exist, returning empty array');
+        payouts = [];
+      } else {
+        throw error;
+      }
+    }
 
     res.json({ success: true, data: payouts });
   } catch (error) {

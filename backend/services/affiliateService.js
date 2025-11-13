@@ -145,18 +145,48 @@ class AffiliateService {
         return null;
       }
 
-      const { data: referrals } = await supabase
-        .from('referrals')
-        .select('*, users:referred_user_id(email, full_name)')
-        .eq('affiliate_id', affiliate.id);
+      // Try to get referrals, handle missing table gracefully
+      let referralsArray = [];
+      try {
+        const { data: referrals } = await supabase
+          .from('referrals')
+          .select('*, users:referred_user_id(email, full_name)')
+          .eq('affiliate_id', affiliate.id);
+        referralsArray = referrals || [];
+      } catch (error) {
+        if (error.message && error.message.includes('does not exist')) {
+          console.warn('Referrals table does not exist, using affiliate_referrals');
+          try {
+            const { data: affiliateReferrals } = await supabase
+              .from('affiliate_referrals')
+              .select('*')
+              .eq('affiliate_id', affiliate.id);
+            referralsArray = affiliateReferrals || [];
+          } catch (fallbackError) {
+            console.warn('affiliate_referrals table also does not exist, using empty array');
+            referralsArray = [];
+          }
+        } else {
+          throw error;
+        }
+      }
 
-      const { data: commissions } = await supabase
-        .from('commissions')
-        .select('*')
-        .eq('affiliate_id', affiliate.id);
-
-      const referralsArray = referrals || [];
-      const commissionsArray = commissions || [];
+      // Try to get commissions, handle missing table gracefully
+      let commissionsArray = [];
+      try {
+        const { data: commissions } = await supabase
+          .from('commissions')
+          .select('*')
+          .eq('affiliate_id', affiliate.id);
+        commissionsArray = commissions || [];
+      } catch (error) {
+        if (error.message && error.message.includes('does not exist')) {
+          console.warn('Commissions table does not exist, using empty array');
+          commissionsArray = [];
+        } else {
+          throw error;
+        }
+      }
 
       const pendingEarnings = commissionsArray
         .filter(c => c.status === 'pending')
@@ -169,9 +199,9 @@ class AffiliateService {
       return {
         affiliate_code: affiliate.affiliate_code,
         total_referrals: referralsArray.length,
-        active_referrals: referralsArray.filter(r => r.status === 'completed').length,
-        total_earnings: affiliate.total_earnings,
-        available_balance: affiliate.total_earnings - paidEarnings,
+        active_referrals: referralsArray.filter(r => r.status === 'completed' || r.status === 'approved').length,
+        total_earnings: affiliate.total_earnings || 0,
+        available_balance: (affiliate.available_balance || affiliate.total_earnings || 0) - paidEarnings,
         pending_earnings: pendingEarnings,
         paid_earnings: paidEarnings
       };

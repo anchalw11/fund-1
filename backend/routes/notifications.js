@@ -18,9 +18,16 @@ router.get('/', async (req, res) => {
 
     const { data, error } = await query;
 
-    if (error) throw error;
+    if (error) {
+      // If table doesn't exist, return empty array instead of error
+      if (error.message && error.message.includes('does not exist')) {
+        console.warn('Notifications table does not exist, returning empty array');
+        return res.json({ success: true, data: [] });
+      }
+      throw error;
+    }
 
-    res.json({ success: true, data });
+    res.json({ success: true, data: data || [] });
   } catch (error) {
     console.error('Error fetching notifications:', error);
     res.status(500).json({ success: false, error: error.message });
