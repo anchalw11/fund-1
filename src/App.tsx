@@ -32,7 +32,6 @@ import SecondChance from './pages/SecondChance';
 import CompetitionDetail from './pages/CompetitionDetail';
 import CompetitionRules from './pages/CompetitionRules';
 import CompetitionSignup from './pages/CompetitionSignup';
-import UserDetailsSubmission from './pages/UserDetailsSubmission';
 import ContractSigning from './pages/ContractSigning';
 import AdminCompetitionProfiles from './pages/AdminCompetitionProfiles';
 import CompetitionPopup from './components/CompetitionPopup';
@@ -76,7 +75,6 @@ function App() {
           <Route path="/competition" element={<CompetitionDetail />} />
           <Route path="/competition-rules" element={<CompetitionRules />} />
           <Route path="/competition-signup" element={<CompetitionSignup />} />
-          <Route path="/user-details" element={<UserDetailsSubmission />} />
           <Route path="/contract-signing" element={<ContractSigning />} />
       </Routes>
     </BrowserRouter>
