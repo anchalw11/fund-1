@@ -51,13 +51,10 @@ router.post('/create', async (req, res) => {
       .from('affiliates')
       .insert({
         user_id,
-        referral_code: uniqueCode,
+        affiliate_code: uniqueCode,
         commission_rate: 10,
         total_referrals: 0,
         total_earnings: 0,
-        available_balance: 0,
-        pending_balance: 0,
-        tier: 'bronze',
         status: 'active'
       })
       .select()
@@ -162,7 +159,7 @@ router.get('/payouts/:user_id', async (req, res) => {
     }
 
     const { data: payouts, error } = await supabase
-      .from('payouts')
+      .from('payouts_affiliate')
       .select('*')
       .eq('affiliate_id', affiliate.id)
       .order('requested_at', { ascending: false });
@@ -208,7 +205,7 @@ router.post('/request-payout', async (req, res) => {
     }
 
     const { data: payout, error } = await supabase
-      .from('affiliate_payouts')
+      .from('payouts_affiliate')
       .insert({
         affiliate_id: affiliate.id,
         amount,
@@ -251,7 +248,7 @@ router.post('/record-purchase', async (req, res) => {
     const { data: affiliate } = await supabase
       .from('affiliates')
       .select('*')
-      .eq('referral_code', referral_code)
+      .eq('affiliate_code', referral_code)
       .eq('status', 'active')
       .maybeSingle();
 

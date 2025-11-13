@@ -155,18 +155,21 @@ class AffiliateService {
         .select('*')
         .eq('affiliate_id', affiliate.id);
 
-      const pendingEarnings = commissions
+      const referralsArray = referrals || [];
+      const commissionsArray = commissions || [];
+
+      const pendingEarnings = commissionsArray
         .filter(c => c.status === 'pending')
         .reduce((sum, c) => sum + c.amount, 0);
 
-      const paidEarnings = commissions
+      const paidEarnings = commissionsArray
         .filter(c => c.status === 'paid')
         .reduce((sum, c) => sum + c.amount, 0);
 
       return {
         affiliate_code: affiliate.affiliate_code,
-        total_referrals: referrals.length,
-        active_referrals: referrals.filter(r => r.status === 'completed').length,
+        total_referrals: referralsArray.length,
+        active_referrals: referralsArray.filter(r => r.status === 'completed').length,
         total_earnings: affiliate.total_earnings,
         available_balance: affiliate.total_earnings - paidEarnings,
         pending_earnings: pendingEarnings,
@@ -202,7 +205,7 @@ class AffiliateService {
 
       for (const [affiliateId, group] of Object.entries(affiliateGroups)) {
         if (group.total >= 100) {
-          await supabase.from('payouts').insert({
+          await supabase.from('payouts_affiliate').insert({
             affiliate_id: affiliateId,
             amount: group.total,
             status: 'pending',

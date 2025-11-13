@@ -2193,18 +2193,18 @@ function AffiliatesSection({ user }: { user: any }) {
     try {
       // First, create affiliate account if doesn't exist
       console.log('Fetching affiliate data for user:', user.id);
-      const createRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/affiliates/create`, {
+      const createRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/affiliates/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: user.id })
       });
-      
+
       const createData = await createRes.json();
-      
+
       // Then fetch stats
-      const statsRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/affiliates/stats/${user.id}`);
+      const statsRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/affiliates/stats/${user.id}`);
       const statsData = await statsRes.json();
-      
+
       if (statsData.success) {
         setAffiliateData(statsData.data);
       }
@@ -2217,7 +2217,7 @@ function AffiliatesSection({ user }: { user: any }) {
 
   async function fetchPayoutHistory() {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/affiliates/payouts/${user.id}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/affiliates/payouts/${user.id}`);
       const data = await res.json();
       if (data.success) {
         setPayoutHistory(data.data);
@@ -2310,13 +2310,13 @@ function AffiliatesSection({ user }: { user: any }) {
       {/* Referral Code & Link */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {/* Referral Code */}
-        <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 rounded-xl p-6 border-2 border-yellow-500/30">
+          <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 rounded-xl p-6 border-2 border-yellow-500/30">
           <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
             <span className="text-yellow-400">⭐</span> Your Referral Code
           </h3>
           <div className="bg-black/30 rounded-lg p-4 mb-3">
             <div className="text-3xl font-mono font-bold text-yellow-400 text-center tracking-wider">
-              {affiliateData?.referral_code || 'LOADING'}
+              {affiliateData?.affiliate_code || 'LOADING'}
             </div>
           </div>
           <p className="text-sm text-white/70">
@@ -2330,7 +2330,7 @@ function AffiliatesSection({ user }: { user: any }) {
           <div className="flex gap-2 mb-3">
             <input
               type="text"
-              value={`${window.location.origin}?ref=${affiliateData?.referral_code || 'LOADING'}`}
+              value={`${window.location.origin}?ref=${affiliateData?.affiliate_code || 'LOADING'}`}
               readOnly
               className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm"
             />
@@ -2349,7 +2349,7 @@ function AffiliatesSection({ user }: { user: any }) {
 
       <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-8">
         <p className="text-white text-sm">
-          <span className="font-bold text-blue-400">How it works:</span> Your referrals can either click your link OR enter your code <span className="font-mono font-bold text-yellow-400">{affiliateData?.referral_code || 'CODE'}</span> during checkout. You'll earn 10% commission either way!
+          <span className="font-bold text-blue-400">How it works:</span> Your referrals can either click your link OR enter your code <span className="font-mono font-bold text-yellow-400">{affiliateData?.affiliate_code || 'CODE'}</span> during checkout. You'll earn 10% commission either way!
         </p>
       </div>
 
