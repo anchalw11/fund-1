@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { supabase, supabaseAdmin, boltSupabase, oldSupabase } from '../lib/db';
+import { supabase, supabaseAdmin, boltSupabase, oldSupabase, backendSupabase } from '../lib/db';
 import { api } from '../lib/api';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -90,7 +90,56 @@ export default function AdminMT5() {
         console.log('Sample profile data:', allProfilesData[0]);
       }
 
-      const profilesMap = new Map(allProfilesData.map((p: UserProfile) => [p.user_id, p]));
+      // ========== FETCH AUTH.USERS AS FALLBACK ==========
+      console.log('🔄 Fetching auth.users data for fallback...');
+      let authUsersData: any[] = [];
+      try {
+        if (backendSupabase) {
+          const { data: authUsers, error: authError } = await backendSupabase.auth.admin.listUsers();
+          if (authError) {
+            console.warn('⚠️ Could not fetch auth.users:', authError.message);
+          } else {
+            authUsersData = authUsers.users || [];
+            console.log(`✅ Fetched ${authUsersData.length} users from auth.users`);
+          }
+        }
+      } catch (authException: any) {
+        console.warn('⚠️ Exception fetching auth.users:', authException.message);
+      }
+
+      // Create auth users map for fallback
+      const authUsersMap = new Map(authUsersData.map((user: any) => [
+        user.id,
+        {
+          user_id: user.id,
+          email: user.email,
+          first_name: user.user_metadata?.first_name || user.user_metadata?.name?.split(' ')[0] || '',
+          last_name: user.user_metadata?.last_name || user.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
+          friendly_id: user.user_metadata?.friendly_id || null,
+          full_name: user.user_metadata?.name || `${user.user_metadata?.first_name || ''} ${user.user_metadata?.last_name || ''}`.trim() || user.email
+        }
+      ]));
+
+      // ========== MERGE PROFILES WITH AUTH FALLBACK ==========
+      const profilesMap = new Map<string, UserProfile>();
+
+      // First, add all existing profiles
+      allProfilesData.forEach((profile: UserProfile) => {
+        profilesMap.set(profile.user_id, profile);
+      });
+
+      // Then, add auth users as fallback for missing profiles
+      authUsersData.forEach((authUser: any) => {
+        if (!profilesMap.has(authUser.id)) {
+          const authProfile = authUsersMap.get(authUser.id);
+          if (authProfile) {
+            console.log(`🔄 Using auth.users fallback for user_id: ${authUser.id} (${authUser.email})`);
+            profilesMap.set(authUser.id, authProfile);
+          }
+        }
+      });
+
+      console.log(`📊 Final merged profiles: ${profilesMap.size} (profiles: ${allProfilesData.length}, auth fallback: ${authUsersData.length - allProfilesData.length})`);
 
       // ========== PRIMARY DATABASE (Challenges Only) ==========
       let newChallengesData = null;
@@ -5060,6 +5109,9 @@ function UserDetailsTab({ users, accounts }: { users: any[]; accounts: MT5Accoun
 }
 
 function generateEmailHTML(account: MT5Account) {
+  if (!supabase) {
+    throw new Error('Supabase client is not initialized');
+  }
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <div style="background: linear-gradient(135deg, #0066FF, #7B2EFF); padding: 40px 20px; text-align: center; color: white;">
