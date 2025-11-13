@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { supabase, supabaseAdmin, boltSupabase, oldSupabase } from '../lib/db';
+import { supabase, supabaseAdmin, boltSupabase, oldSupabase, backendSupabase } from '../lib/db';
 import { api } from '../lib/api';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -94,8 +94,8 @@ export default function AdminMT5() {
       console.log('🔄 Fetching auth.users data for fallback...');
       let authUsersData: any[] = [];
       try {
-        if (supabaseAdmin) {
-          const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
+        if (backendSupabase) {
+          const { data: authUsers, error: authError } = await backendSupabase.auth.admin.listUsers();
           if (authError) {
             console.warn('⚠️ Could not fetch auth.users:', authError.message);
           } else {

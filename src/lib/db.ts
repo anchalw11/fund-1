@@ -81,6 +81,19 @@ export const newSupabase = createClient(newSupabaseUrl, newSupabaseKey, {
       }
     });
 
+// BACKEND DATABASE (for auth.users access)
+const backendSupabaseUrl = 'https://cjjobdopkkbwexfxwosb.supabase.co';
+const backendSupabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqam9iZG9wa2tid2V4Znh3b3NiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTExNDQzMywiZXhwIjoyMDc2NjkwNDMzfQ.QbkeN1dZpz0rpilpZ_zv_GxhrMp2BWsHcFl7RADLfZA';
+
+export const backendSupabase = createClient(backendSupabaseUrl, backendSupabaseServiceKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+        storageKey: 'supabase-backend-db'
+      }
+    });
+
 export const db = {
   query: async (text: string, params: any[] = []) => {
     if (!supabase) {
