@@ -9,7 +9,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config();
+// Load .env from project root
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 // Certificate generator import removed - using simplified HTML emails
 
@@ -52,16 +53,24 @@ class EmailService {
   }
 
   initializeTransporter() {
-    // Check if SMTP credentials are configured
-    const hasCredentials = !!(emailConfig.smtp.host && emailConfig.smtp.auth.user && emailConfig.smtp.auth.pass);
+    // Check if SMTP credentials are configured - check environment variables directly
+    const hasCredentials = !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD);
 
     if (hasCredentials) {
       try {
-        this.transporter = nodemailer.createTransport(emailConfig.smtp);
+        this.transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST,
+          port: parseInt(process.env.SMTP_PORT, 10) || 587,
+          secure: process.env.SMTP_SECURE === 'true' || false,
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASSWORD,
+          },
+        });
         this.isConfigured = true;
         console.log('✅ Email service configured with SMTP');
-        console.log(`   Host: ${emailConfig.smtp.host}`);
-        console.log(`   User: ${emailConfig.smtp.auth.user}`);
+        console.log(`   Host: ${process.env.SMTP_HOST}`);
+        console.log(`   User: ${process.env.SMTP_USER}`);
       } catch (error) {
         console.error('❌ Failed to initialize SMTP transporter:', error.message);
         this.isConfigured = false;

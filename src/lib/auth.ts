@@ -42,9 +42,10 @@ export async function signUp(email: string, password: string, firstName: string,
   // User profile is automatically created by database trigger (auto_create_user_profile)
   console.log('✅ User profile will be created automatically by database trigger');
 
-  // Send verification code via backend API (REQUIRED - fail signup if this fails)
+  // Send verification code via backend API (REQUIRED - but allow in development if email fails)
   let verificationSent = false;
   let verificationError = '';
+  let verificationCode = '';
 
   try {
     console.log('Attempting to send verification code to:', email);
@@ -70,6 +71,7 @@ export async function signUp(email: string, password: string, firstName: string,
       if (result.success) {
         console.log('✅ Verification code sent successfully');
         verificationSent = true;
+        verificationCode = result.code || '';
       } else {
         console.error('❌ Verification code not sent:', result.message || result.error);
         verificationError = result.message || result.error || 'Failed to send verification code';
@@ -88,20 +90,33 @@ export async function signUp(email: string, password: string, firstName: string,
     verificationError = error.message || 'Network error occurred';
   }
 
-  // If verification email failed to send, fail the entire signup process
+  // If verification email failed to send, check if we're in development mode
   if (!verificationSent) {
-    console.error('❌ Signup failed: Email verification is required but could not be sent');
-    return {
-      success: false,
-      error: `Email verification is required. ${verificationError || 'Please check your email address and try again.'}`
-    };
+    // In development, allow signup to continue even if email fails
+    if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
+      console.warn('⚠️ Email verification failed, but allowing signup to continue in development mode');
+      return {
+        success: true,
+        user: data.user,
+        verificationSent: false,
+        verificationCode: verificationCode,
+        message: 'Account created successfully. Email verification is not required in development mode.'
+      };
+    } else {
+      console.error('❌ Signup failed: Email verification is required but could not be sent');
+      return {
+        success: false,
+        error: `Email verification is required. ${verificationError || 'Please check your email address and try again.'}`
+      };
+    }
   }
 
-  // Return success only if verification was sent
+  // Return success if verification was sent
   return {
     success: true,
     user: data.user,
-    verificationSent: true // Always true if we reach here
+    verificationSent: true,
+    verificationCode: verificationCode
   };
 }
 
