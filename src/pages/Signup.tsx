@@ -62,40 +62,21 @@ export default function Signup() {
     console.log('Signup result:', result);
 
     if (result.success) {
-      console.log('✅ Signup successful');
+      console.log('✅ Signup successful - auto-verified');
 
-      // Always store verification code for testing (will be available even if email fails)
-      if (result.verificationCode) {
-        localStorage.setItem('verificationCode', result.verificationCode);
-        console.log('🔑 Verification code stored for testing:', result.verificationCode);
-      }
+      // User is auto-verified, skip email verification page
+      console.log('Skipping email verification - redirecting directly');
 
-      // Always redirect to email verification page (required for all users)
-      console.log('Redirecting to email verification (required for all users)');
-
-      // Store email for verification page
-      localStorage.setItem('verificationEmail', formData.email);
-
-      // If there's a pending payment, store it for after verification
+      // If there's a pending payment, go directly to payment
       if (returnTo && accountSize && challengeType && originalPrice !== undefined) {
-        console.log('Storing pending payment data');
-        localStorage.setItem('pendingPayment', JSON.stringify({
-          accountSize,
-          challengeType,
-          originalPrice,
-          isPayAsYouGo,
-          phase2Price
-        }));
+        console.log('Redirecting to payment page');
+        const paymentUrl = `/payment?accountSize=${accountSize}&challengeType=${encodeURIComponent(challengeType)}&originalPrice=${originalPrice}${isPayAsYouGo ? `&isPayAsYouGo=true&phase2Price=${phase2Price}` : ''}`;
+        window.location.href = paymentUrl;
+      } else {
+        // No pending payment, go to dashboard
+        console.log('Redirecting to dashboard');
+        navigate('/dashboard', { state: { emailVerified: true, email: formData.email } });
       }
-
-      navigate('/email-verification', {
-        state: {
-          email: formData.email,
-          verificationSent: result.verificationSent,
-          message: result.message
-        },
-        replace: true
-      });
     } else {
       setError(result.error || 'Registration failed');
       setLoading(false);

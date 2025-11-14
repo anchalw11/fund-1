@@ -90,22 +90,14 @@ export async function signUp(email: string, password: string, firstName: string,
     verificationError = error.message || 'Network error occurred';
   }
 
-  // Always require email verification - even if email fails to send
-  // The verification code will be available for testing
-  if (!verificationSent) {
-    console.warn('⚠️ Email verification failed to send, but signup allowed to continue');
-    console.warn('   Verification code for testing:', verificationCode);
-  }
+  // Skip email verification - auto-verify users
+  console.log('✅ User auto-verified - skipping email verification step');
 
-  // Always redirect to email verification page
   return {
     success: true,
     user: data.user,
-    verificationSent: verificationSent,
-    verificationCode: verificationCode,
-    message: verificationSent ?
-      'Account created successfully. Please check your email for verification code.' :
-      'Account created successfully. Use the verification code shown in console for testing.'
+    autoVerified: true,
+    message: 'Account created successfully!'
   };
 }
 

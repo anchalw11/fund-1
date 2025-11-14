@@ -7,7 +7,35 @@ import { fileURLToPath } from 'url';
 // Ensure environment variables are loaded first
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Try to load from backend/.env first, then fallback to root .env
 dotenv.config({ path: path.resolve(__dirname, '.env') });
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+// Ensure SMTP variables are set for production (Render)
+if (!process.env.SMTP_HOST) {
+  process.env.SMTP_HOST = 'smtp.gmail.com';
+  console.log('🔧 Set SMTP_HOST from code');
+}
+if (!process.env.SMTP_USER) {
+  process.env.SMTP_USER = 'fund8r.forex@gmail.com';
+  console.log('🔧 Set SMTP_USER from code');
+}
+if (!process.env.SMTP_PASSWORD) {
+  process.env.SMTP_PASSWORD = 'taaacfxyuztonswc';
+  console.log('🔧 Set SMTP_PASSWORD from code');
+}
+if (!process.env.SMTP_PORT) {
+  process.env.SMTP_PORT = '587';
+  console.log('🔧 Set SMTP_PORT from code');
+}
+
+// Debug: Log SMTP configuration status
+console.log('🔧 Environment Variables Check:');
+console.log('   SMTP_HOST:', process.env.SMTP_HOST ? '✅ Set' : '❌ Missing');
+console.log('   SMTP_USER:', process.env.SMTP_USER ? '✅ Set' : '❌ Missing');
+console.log('   SMTP_PASSWORD:', process.env.SMTP_PASSWORD ? '✅ Set' : '❌ Missing');
+console.log('   SMTP_PORT:', process.env.SMTP_PORT || '587 (default)');
 
 // Import and reinitialize email service to ensure env vars are loaded
 import EmailService from './services/emailService.js';
