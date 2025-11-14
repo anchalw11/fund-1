@@ -27,9 +27,9 @@ const createSafeClient = (url, key, name, options = {}) => {
 };
 
 
-// PRIMARY DATABASE
-const supabaseUrl = 'https://cjjobdopkkbwexfxwosb.supabase.co';
-const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqam9iZG9wa2tid2V4Znh3b3NiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTExNDQzMywiZXhwIjoyMDc2NjkwNDMzfQ.QbkeN1dZpz0rpilpZ_zv_GxhrMp2BWsHcFl7RADLfZA';
+// PRIMARY DATABASE (Now using NEW database for consistency)
+const supabaseUrl = 'https://sjccpdfdhoqjywuitjju.supabase.co';
+const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqY2NwZGZkaG9xanl3dWl0amp1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTU3NjU5NiwiZXhwIjoyMDc3MTUyNTk2fQ.sxI2LjZfzVvc4YSgTwDEifcRJOpcSsyVmNfqqkpEei0';
 export const supabase = createSafeClient(supabaseUrl, supabaseServiceKey, 'PRIMARY', {
   auth: {
     autoRefreshToken: false,

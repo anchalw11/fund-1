@@ -7,8 +7,8 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = 'https://sjccpdfdhoqjywuitjju.supabase.co';
+const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqY2NwZGZkaG9xanl3dWl0amp1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTU3NjU5NiwiZXhwIjoyMDc3MTUyNTk2fQ.sxI2LjZfzVvc4YSgTwDEifcRJOpcSsyVmNfqqkpEei0';
 
 if (!supabaseUrl || !supabaseServiceKey) {
   console.error('❌ Missing Supabase configuration in environment variables');
@@ -50,7 +50,7 @@ class AffiliateCodeAssigner {
       console.log('📋 Checking existing affiliates...');
       const { data: affiliates, error } = await supabase
         .from('affiliates')
-        .select('user_id, affiliate_code');
+        .select('user_id, referral_code');
 
       if (error) {
         console.warn('⚠️ Affiliates table might not exist yet:', error.message);
@@ -71,7 +71,7 @@ class AffiliateCodeAssigner {
         .from('affiliates')
         .insert({
           user_id: userId,
-          affiliate_code: affiliateCode,
+          referral_code: affiliateCode,
           commission_rate: 10,
           total_referrals: 0,
           total_earnings: 0,
@@ -162,11 +162,11 @@ class AffiliateCodeAssigner {
 
       const { data: affiliates, error: affiliatesError } = await supabase
         .from('affiliates')
-        .select('user_id, affiliate_code');
+        .select('user_id, referral_code');
 
       if (affiliatesError) throw affiliatesError;
 
-      const affiliateMap = new Map(affiliates.map(a => [a.user_id, a.affiliate_code]));
+      const affiliateMap = new Map(affiliates.map(a => [a.user_id, a.referral_code]));
 
       console.log('📋 Current Affiliate Code Assignments:');
       console.log('=' .repeat(60));

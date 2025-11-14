@@ -15,7 +15,7 @@ class AffiliateService {
         .from('affiliates')
         .insert({
           user_id: userId,
-          affiliate_code: affiliateCode,
+          referral_code: affiliateCode,
           commission_rate: 10,
           total_referrals: 0,
           total_earnings: 0,
@@ -38,7 +38,7 @@ class AffiliateService {
       const { data: affiliate } = await supabase
         .from('affiliates')
         .select('*')
-        .eq('affiliate_code', affiliateCode)
+        .eq('referral_code', affiliateCode)
         .eq('status', 'active')
         .single();
 
@@ -197,7 +197,7 @@ class AffiliateService {
         .reduce((sum, c) => sum + c.amount, 0);
 
       return {
-        affiliate_code: affiliate.affiliate_code,
+        affiliate_code: affiliate.referral_code,
         total_referrals: referralsArray.length,
         active_referrals: referralsArray.filter(r => r.status === 'completed' || r.status === 'approved').length,
         total_earnings: affiliate.total_earnings || 0,

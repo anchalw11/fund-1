@@ -51,7 +51,7 @@ router.post('/create', async (req, res) => {
       .from('affiliates')
       .insert({
         user_id,
-        affiliate_code: uniqueCode,
+        referral_code: uniqueCode,
         commission_rate: 10,
         total_referrals: 0,
         total_earnings: 0,
@@ -260,7 +260,7 @@ router.post('/record-purchase', async (req, res) => {
     const { data: affiliate } = await supabase
       .from('affiliates')
       .select('*')
-      .eq('affiliate_code', referral_code)
+      .eq('referral_code', referral_code)
       .eq('status', 'active')
       .maybeSingle();
 
@@ -311,7 +311,7 @@ router.get('/validate-code/:code', async (req, res) => {
     const { data: affiliate } = await supabase
       .from('affiliates')
       .select('*')
-      .eq('affiliate_code', code)
+      .eq('referral_code', code)
       .eq('status', 'active')
       .single();
 
