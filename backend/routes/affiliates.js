@@ -26,7 +26,7 @@ router.post('/create', async (req, res) => {
     const { data: userProfile } = await supabase
       .from('user_profile')
       .select('full_name, user_friendly_id, email')
-      .eq('id', user_id)
+      .eq('user_id', user_id)
       .maybeSingle();
 
     // Generate name-based code
