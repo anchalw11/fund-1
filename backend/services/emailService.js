@@ -350,278 +350,262 @@ class EmailService {
         console.log('='.repeat(60) + '\n');
         return; // Don't throw error, just log
       }
-      
+
       const subject = `🚀 Welcome to ${process.env.COMPANY_NAME || 'Fund8r'} - Your Trading Journey Begins!`;
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            line-height: 1.6; 
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
-            padding: 20px;
-          }
-          .email-container { 
-            max-width: 650px; 
-            margin: 0 auto; 
-            background: #ffffff;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-          }
-          .header { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; 
-            padding: 50px 30px; 
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-          }
-          .header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            animation: pulse 4s ease-in-out infinite;
-          }
-          @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.1); opacity: 0.8; }
-          }
-          .header h1 { 
-            font-size: 32px; 
-            margin-bottom: 10px;
-            position: relative;
-            z-index: 1;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-          }
-          .header p {
-            font-size: 16px;
-            opacity: 0.9;
-            position: relative;
-            z-index: 1;
-          }
-          .content { 
-            padding: 40px 30px;
-            background: #ffffff;
-          }
-          .welcome-badge {
-            display: inline-block;
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white;
-            padding: 8px 20px;
-            border-radius: 50px;
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);
-          }
-          .greeting { 
-            font-size: 20px; 
-            color: #1a1f3a; 
-            margin-bottom: 20px;
-            font-weight: 600;
-          }
-          .intro-text {
-            color: #4a5568;
-            font-size: 16px;
-            line-height: 1.8;
-            margin-bottom: 30px;
-          }
-          .features-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin: 30px 0;
-          }
-          .feature-card {
-            background: linear-gradient(135deg, #f6f8fb 0%, #e9ecef 100%);
-            padding: 20px;
-            border-radius: 12px;
-            border-left: 4px solid #667eea;
-            transition: transform 0.3s ease;
-          }
-          .feature-icon {
-            font-size: 32px;
-            margin-bottom: 10px;
-          }
-          .feature-title {
-            font-size: 16px;
-            font-weight: bold;
-            color: #1a1f3a;
-            margin-bottom: 5px;
-          }
-          .feature-desc {
-            font-size: 13px;
-            color: #6c757d;
-          }
-          .cta-button { 
-            display: inline-block; 
-            padding: 16px 40px; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; 
-            text-decoration: none; 
-            border-radius: 50px; 
-            margin: 30px 0;
-            font-weight: bold;
-            font-size: 16px;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
-            transition: all 0.3s ease;
-          }
-          .stats-bar {
-            background: linear-gradient(135deg, #1a1f3a 0%, #2d3748 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 12px;
-            margin: 30px 0;
-            text-align: center;
-          }
-          .stat-item {
-            display: inline-block;
-            margin: 0 20px;
-          }
-          .stat-number {
-            font-size: 28px;
-            font-weight: bold;
-            color: #38ef7d;
-          }
-          .stat-label {
-            font-size: 12px;
-            opacity: 0.8;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-          }
-          .footer { 
-            background: #f8f9fa;
-            text-align: center; 
-            padding: 30px; 
-            color: #6c757d; 
-            font-size: 13px;
-            border-top: 1px solid #e9ecef;
-          }
-          .social-links {
-            margin: 20px 0;
-          }
-          .social-links a {
-            display: inline-block;
-            margin: 0 10px;
-            color: #667eea;
-            text-decoration: none;
-            font-weight: bold;
-          }
-          @media only screen and (max-width: 600px) {
-            .features-grid { grid-template-columns: 1fr; }
-            .stat-item { display: block; margin: 15px 0; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="email-container">
-          <div class="header">
-            <h1>🚀 Welcome Aboard!</h1>
-            <p>Your journey to becoming a funded trader starts now</p>
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              line-height: 1.6;
+              background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+              padding: 20px;
+            }
+            .email-container {
+              max-width: 650px;
+              margin: 0 auto;
+              background: #ffffff;
+              border-radius: 20px;
+              overflow: hidden;
+              box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            }
+            .header {
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+              padding: 50px 30px;
+              text-align: center;
+              position: relative;
+              overflow: hidden;
+            }
+            .header::before {
+              content: '';
+              position: absolute;
+              top: -50%;
+              right: -50%;
+              width: 200%;
+              height: 200%;
+              background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+              animation: pulse 4s ease-in-out infinite;
+            }
+            @keyframes pulse {
+              0%, 100% { transform: scale(1); opacity: 0.5; }
+              50% { transform: scale(1.1); opacity: 0.8; }
+            }
+            .header h1 {
+              font-size: 32px;
+              margin-bottom: 10px;
+              position: relative;
+              z-index: 1;
+              text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            }
+            .header p {
+              font-size: 16px;
+              opacity: 0.9;
+              position: relative;
+              z-index: 1;
+            }
+            .content {
+              padding: 40px 30px;
+              background: #ffffff;
+            }
+            .welcome-badge {
+              display: inline-block;
+              background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+              color: white;
+              padding: 8px 20px;
+              border-radius: 50px;
+              font-size: 14px;
+              font-weight: bold;
+              margin-bottom: 20px;
+              box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);
+            }
+            .greeting {
+              font-size: 20px;
+              color: #1a1f3a;
+              margin-bottom: 20px;
+              font-weight: 600;
+            }
+            .intro-text {
+              color: #4a5568;
+              font-size: 16px;
+              line-height: 1.8;
+              margin-bottom: 30px;
+            }
+            .features-grid {
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 20px;
+              margin: 30px 0;
+            }
+            .feature-card {
+              background: linear-gradient(135deg, #f6f8fb 0%, #e9ecef 100%);
+              padding: 20px;
+              border-radius: 12px;
+              border-left: 4px solid #667eea;
+              transition: transform 0.3s ease;
+            }
+            .feature-icon {
+              font-size: 32px;
+              margin-bottom: 10px;
+            }
+            .feature-title {
+              font-size: 16px;
+              font-weight: bold;
+              color: #1a1f3a;
+              margin-bottom: 5px;
+            }
+            .feature-desc {
+              font-size: 13px;
+              color: #6c757d;
+            }
+            .cta-button {
+              display: inline-block;
+              padding: 16px 40px;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+              text-decoration: none;
+              border-radius: 50px;
+              margin: 30px 0;
+              font-weight: bold;
+              font-size: 16px;
+              box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+              transition: all 0.3s ease;
+            }
+            .stats-bar {
+              background: linear-gradient(135deg, #1a1f3a 0%, #2d3748 100%);
+              color: white;
+              padding: 30px;
+              border-radius: 12px;
+              margin: 30px 0;
+              text-align: center;
+            }
+            .stat-item {
+              display: inline-block;
+              margin: 0 20px;
+            }
+            .stat-number {
+              font-size: 28px;
+              font-weight: bold;
+              color: #38ef7d;
+            }
+            .stat-label {
+              font-size: 12px;
+              opacity: 0.8;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+            }
+            .footer {
+              background: #f8f9fa;
+              text-align: center;
+              padding: 30px;
+              color: #6c757d;
+              font-size: 13px;
+              border-top: 1px solid #e9ecef;
+            }
+            .social-links {
+              margin: 20px 0;
+            }
+            .social-links a {
+              display: inline-block;
+              margin: 0 10px;
+              color: #667eea;
+              text-decoration: none;
+              font-weight: bold;
+            }
+            @media only screen and (max-width: 600px) {
+              .features-grid { grid-template-columns: 1fr; }
+              .stat-item { display: block; margin: 15px 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="email-container">
+            <div class="header">
+              <h1>🚀 Welcome Aboard!</h1>
+              <p>Your journey to becoming a funded trader starts now</p>
+            </div>
+            <div class="content">
+              <div class="welcome-badge">✨ NEW MEMBER</div>
+              <div class="greeting">Hi ${user.full_name || user.email?.split('@')[0] || 'Trader'},</div>
+              <div class="intro-text">
+                Welcome to <strong>${process.env.COMPANY_NAME || 'Fund8r'}</strong>! 🎉 We're thrilled to have you join our elite community of traders. You've just taken the first step toward trading with real capital and keeping up to 90% of your profits.
+              </div>
+
+              <div class="stats-bar">
+                <div class="stat-item">
+                  <div class="stat-number">$200K+</div>
+                  <div class="stat-label">Max Funding</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-number">90%</div>
+                  <div class="stat-label">Profit Split</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-number">24/7</div>
+                  <div class="stat-label">Support</div>
+                </div>
+              </div>
+
+              <div class="features-grid">
+                <div class="feature-card">
+                  <div class="feature-icon">📊</div>
+                  <div class="feature-title">Choose Your Challenge</div>
+                  <div class="feature-desc">Select from multiple challenge types that fit your trading style</div>
+                </div>
+                <div class="feature-card">
+                  <div class="feature-icon">💰</div>
+                  <div class="feature-title">Get Funded</div>
+                  <div class="feature-desc">Pass the challenge and trade with our capital</div>
+                </div>
+                <div class="feature-card">
+                  <div class="feature-icon">📈</div>
+                  <div class="feature-title">Real-Time Tracking</div>
+                  <div class="feature-desc">Monitor your progress with advanced analytics</div>
+                </div>
+                <div class="feature-card">
+                  <div class="feature-icon">🎓</div>
+                  <div class="feature-title">Expert Resources</div>
+                  <div class="feature-desc">Access trading guides and educational content</div>
+                </div>
+              </div>
+
+              <div style="text-align: center;">
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/pricing" class="cta-button">
+                  🚀 Browse Challenges
+                </a>
+              </div>
+
+              <div style="margin-top: 30px; padding: 20px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 8px;">
+                <strong>💡 Pro Tip:</strong> Start with our Rapid Fire challenge if you're an aggressive trader, or choose Classic 2-Step for a more conservative approach.
+              </div>
+            </div>
+            <div class="footer">
+              <div class="social-links">
+                <a href="#">Twitter</a> •
+                <a href="#">Discord</a> •
+                <a href="#">Instagram</a>
+              </div>
+              <p>Need help? Reply to this email or visit our <a href="${process.env.FRONTEND_URL}/support" style="color: #667eea;">Support Center</a></p>
+              <p style="margin-top: 15px; opacity: 0.7;">&copy; 2024 ${process.env.COMPANY_NAME || 'Fund8r'}. All rights reserved.</p>
+            </div>
           </div>
-          <div class="content">
-            <div class="welcome-badge">✨ NEW MEMBER</div>
-            <div class="greeting">Hi ${user.full_name || user.email?.split('@')[0] || 'Trader'},</div>
-            <div class="intro-text">
-              Welcome to <strong>${process.env.COMPANY_NAME || 'Fund8r'}</strong>! 🎉 We're thrilled to have you join our elite community of traders. You've just taken the first step toward trading with real capital and keeping up to 90% of your profits.
-            </div>
+        </body>
+        </html>
+      `;
 
-            <div class="stats-bar">
-              <div class="stat-item">
-                <div class="stat-number">$200K+</div>
-                <div class="stat-label">Max Funding</div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-number">90%</div>
-                <div class="stat-label">Profit Split</div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-number">24/7</div>
-                <div class="stat-label">Support</div>
-              </div>
-            </div>
+      await this.transporter.sendMail({
+        from: `"${process.env.COMPANY_NAME || 'Fund8r'}" <${process.env.SMTP_USER}>`,
+        to: user.email,
+        subject: subject,
+        html: html
+      });
 
-            <div class="features-grid">
-              <div class="feature-card">
-                <div class="feature-icon">📊</div>
-                <div class="feature-title">Choose Your Challenge</div>
-                <div class="feature-desc">Select from multiple challenge types that fit your trading style</div>
-              </div>
-              <div class="feature-card">
-                <div class="feature-icon">💰</div>
-                <div class="feature-title">Get Funded</div>
-                <div class="feature-desc">Pass the challenge and trade with our capital</div>
-              </div>
-              <div class="feature-card">
-                <div class="feature-icon">📈</div>
-                <div class="feature-title">Real-Time Tracking</div>
-                <div class="feature-desc">Monitor your progress with advanced analytics</div>
-              </div>
-              <div class="feature-card">
-                <div class="feature-icon">🎓</div>
-                <div class="feature-title">Expert Resources</div>
-                <div class="feature-desc">Access trading guides and educational content</div>
-              </div>
-            </div>
-
-            <div style="text-align: center;">
-              <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/pricing" class="cta-button">
-                🚀 Browse Challenges
-              </a>
-            </div>
-
-            <div style="margin-top: 30px; padding: 20px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 8px;">
-              <strong>💡 Pro Tip:</strong> Start with our Rapid Fire challenge if you're an aggressive trader, or choose Classic 2-Step for a more conservative approach.
-            </div>
-          </div>
-          <div class="footer">
-            <div class="social-links">
-              <a href="#">Twitter</a> • 
-              <a href="#">Discord</a> • 
-              <a href="#">Instagram</a>
-            </div>
-            <p>Need help? Reply to this email or visit our <a href="${process.env.FRONTEND_URL}/support" style="color: #667eea;">Support Center</a></p>
-            <p style="margin-top: 15px; opacity: 0.7;">&copy; 2024 ${process.env.COMPANY_NAME || 'Fund8r'}. All rights reserved.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-
-    // Generate welcome certificate
-    const certNumber = 'CERT-' + Date.now();
-    const certPath = path.join(this.certsDir, `welcome_${certNumber}.pdf`);
-    await this.generateWelcomeCertificate(certPath, user.full_name || user.email, certNumber);
-
-    // Send email with certificate attachment
-    await this.transporter.sendMail({
-      from: `"${process.env.COMPANY_NAME || 'Fund8r'}" <${process.env.SMTP_USER}>`,
-      to: user.email,
-      subject: subject,
-      html: html,
-      attachments: [
-        {
-          filename: `Welcome_Certificate_${certNumber}.pdf`,
-          path: certPath,
-          contentType: 'application/pdf'
-        }
-      ]
-    });
-    
-    console.log(`Welcome email with certificate sent to ${user.email}`);
-
-    // Also notify admin (commented out as method doesn't exist)
-    // await this.notifyAdminNewSignup(user);
+      console.log(`Welcome email sent to ${user.email}`);
     } catch (error) {
       console.error('Error sending welcome email:', error);
       throw error;

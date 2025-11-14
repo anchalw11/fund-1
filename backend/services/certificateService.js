@@ -120,15 +120,11 @@ class CertificateService {
               document_type: 'certificate',
               document_number: docNumber,
               title: 'Welcome Certificate',
+              description: 'Welcome certificate for joining Fund8r',
               file_path: `/certificates/${fileName}`,
-              file_name: fileName,
-              file_size: fs.statSync(filePath).size,
               status: 'ready',
-              certificate_data: {
-                type: 'welcome',
-                trader_name: userData.full_name || userData.email,
-                issue_date: new Date().toISOString()
-              }
+              auto_generated: true,
+              generated_at: new Date().toISOString()
             })
             .select()
             .single();
@@ -212,16 +208,11 @@ class CertificateService {
               document_type: 'certificate',
               document_number: docNumber,
               title: 'Challenge Started Certificate',
+              description: `Challenge started certificate for ${accountData.challenge_type}`,
               file_path: `/certificates/${fileName}`,
-              file_name: fileName,
-              file_size: fs.statSync(filePath).size,
               status: 'ready',
-              certificate_data: {
-                type: 'challenge_started',
-                challenge_type: accountData.challenge_type,
-                account_size: accountData.account_size,
-                start_date: accountData.start_date
-              }
+              auto_generated: true,
+              generated_at: new Date().toISOString()
             })
             .select()
             .single();
@@ -316,17 +307,12 @@ class CertificateService {
               document_type: 'invoice',
               document_number: docNumber,
               title: 'Purchase Invoice',
+              description: transactionData.description,
               file_path: `/invoices/${fileName}`,
-              file_name: fileName,
-              file_size: fs.statSync(filePath).size,
+              amount: transactionData.amount,
               status: 'ready',
-              invoice_data: {
-                customer_name: transactionData.customer_name,
-                customer_email: transactionData.customer_email,
-                amount: transactionData.amount,
-                discount: transactionData.discount || 0,
-                total: transactionData.amount - (transactionData.discount || 0)
-              }
+              auto_generated: true,
+              generated_at: new Date().toISOString()
             })
             .select()
             .single();

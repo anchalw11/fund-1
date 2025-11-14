@@ -98,12 +98,60 @@ router.post('/welcome', async (req, res) => {
 
     console.log('📧 Processing welcome email for:', email);
 
-    // Send the welcome email with certificate
-    await emailService.sendWelcomeWithCertificate({
-      email,
-      name: name || 'Trader',
-      accountId: accountId || 'WELCOME-' + Date.now()
-    });
+    // Send a simple welcome email without certificate generation
+    const subject = `🦁 Welcome to Fund8r - Your Trading Journey Begins!`;
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%); padding: 20px; color: white; }
+          .container { max-width: 600px; margin: 0 auto; background: rgba(255,255,255,0.1); border-radius: 15px; padding: 40px; }
+          .header { text-align: center; font-size: 60px; margin-bottom: 20px; }
+          .title { color: #FFD700; text-align: center; font-size: 28px; margin-bottom: 20px; }
+          .content { background: rgba(255,255,255,0.05); padding: 30px; border-radius: 10px; margin: 20px 0; }
+          .highlight { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px; margin: 20px 0; text-align: center; }
+          .button { display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 50px; margin-top: 20px; font-weight: bold; }
+          .footer { background: rgba(0,0,0,0.3); padding: 20px; text-align: center; border-radius: 10px; margin-top: 30px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">🦁</div>
+          <div class="title">Welcome to Fund8r!</div>
+          <div class="content">
+            <h2>Hi ${name || 'Trader'},</h2>
+            <p>Welcome to the Fund8r elite trading community! You've just taken the first step toward trading with real capital and keeping up to 90% of your profits.</p>
+
+            <div class="highlight">
+              <h3>Your Account Details</h3>
+              <p><strong>Account ID:</strong> ${accountId || 'WELCOME-' + Date.now()}</p>
+              <p><strong>Status:</strong> Active Trader</p>
+              <p><strong>Clearance:</strong> Level 1</p>
+            </div>
+
+            <p><strong>Next Steps:</strong></p>
+            <ul>
+              <li>Complete your profile setup</li>
+              <li>Choose your first trading challenge</li>
+              <li>Start your journey to funded trading</li>
+            </ul>
+
+            <div style="text-align: center;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard" class="button">Go to Dashboard</a>
+            </div>
+          </div>
+          <div class="footer">
+            <p>Questions? Contact our support team at urgent.fund8r@gmail.com</p>
+            <p>&copy; ${new Date().getFullYear()} Fund8r. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Send the email
+    await emailService.sendEmail(email, subject, html);
 
     res.json({
       success: true,

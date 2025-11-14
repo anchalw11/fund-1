@@ -3033,7 +3033,11 @@ function CertificatesTab({ users }: { users: any[] }) {
     try {
       const API_URL = import.meta.env.VITE_API_URL || '/api';
       let endpoint = '';
-      let body: any = { user_id: pendingItem.user_id };
+      let body: any = {
+        user_id: pendingItem.user_id,
+        email: pendingItem.user_email,
+        name: pendingItem.user_name || pendingItem.user_email
+      };
 
       // Determine endpoint and body based on type
       switch (pendingItem.type) {
@@ -3045,6 +3049,8 @@ function CertificatesTab({ users }: { users: any[] }) {
           endpoint = `${API_URL}/certificates/challenge-started`;
           body = {
             user_id: pendingItem.user_id,
+            email: pendingItem.user_email,
+            name: pendingItem.user_name || pendingItem.user_email,
             account_id: pendingItem.challenge_id,
             challenge_type: pendingItem.challenge_type,
             account_size: pendingItem.account_size
@@ -3054,6 +3060,8 @@ function CertificatesTab({ users }: { users: any[] }) {
           endpoint = `${API_URL}/emails/challenge-started`;
           body = {
             user_id: pendingItem.user_id,
+            email: pendingItem.user_email,
+            name: pendingItem.user_name || pendingItem.user_email,
             challenge_id: pendingItem.challenge_id,
             challenge_type: pendingItem.challenge_type,
             account_size: pendingItem.account_size
@@ -3063,6 +3071,8 @@ function CertificatesTab({ users }: { users: any[] }) {
           endpoint = `${API_URL}/emails/breach-notification`;
           body = {
             user_id: pendingItem.user_id,
+            email: pendingItem.user_email,
+            name: pendingItem.user_name || pendingItem.user_email,
             challenge_id: pendingItem.challenge_id,
             challenge_type: pendingItem.challenge_type,
             account_size: pendingItem.account_size
@@ -3340,6 +3350,11 @@ function CertificatesTab({ users }: { users: any[] }) {
                         switch (template.id) {
                           case 'welcome':
                             endpoint = `${API_URL}/email/welcome`;
+                            body = {
+                              email: selectedUser.email,
+                              name: selectedUser.full_name || selectedUser.email,
+                              accountId: 'WELCOME-' + Date.now()
+                            };
                             break;
                           case 'challenge_started':
                             if (!selectedAccount) {
@@ -3381,14 +3396,22 @@ function CertificatesTab({ users }: { users: any[] }) {
                             };
                             break;
                           case 'payout_notification':
-                            endpoint = `${API_URL}/email/payout-notification`;
+                            endpoint = `${API_URL}/email/payout`;
                             body = {
-                              user_id: selectedUser.id,
-                              amount: 1000 // This would need to be configurable
+                              email: selectedUser.email,
+                              name: selectedUser.full_name || selectedUser.email,
+                              amount: '1,000.00',
+                              transactionId: 'PAY-' + Date.now(),
+                              arrivalTime: '1-3 business days'
                             };
                             break;
                           case 'welcome_certificate':
-                            endpoint = `${API_URL}/certificates/welcome`;
+                            endpoint = `${API_URL}/email/welcome`;
+                            body = {
+                              email: selectedUser.email,
+                              name: selectedUser.full_name || selectedUser.email,
+                              accountId: 'WELCOME-' + Date.now()
+                            };
                             break;
                           case 'challenge_certificate':
                             if (!selectedAccount) {
@@ -5109,9 +5132,6 @@ function UserDetailsTab({ users, accounts }: { users: any[]; accounts: MT5Accoun
 }
 
 function generateEmailHTML(account: MT5Account) {
-  if (!supabase) {
-    throw new Error('Supabase client is not initialized');
-  }
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <div style="background: linear-gradient(135deg, #0066FF, #7B2EFF); padding: 40px 20px; text-align: center; color: white;">
