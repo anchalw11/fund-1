@@ -144,12 +144,12 @@ export default function AdminMT5() {
       // ========== PRIMARY DATABASE (Challenges Only) ==========
       let newChallengesData = null;
 
-      if (!supabase) {
-        console.error('Primary Supabase client is not initialized');
+      if (!supabaseAdmin) {
+        console.error('Primary Supabase admin client is not initialized');
       } else {
         try {
 
-          const { data: challenges, error: newChallengesError } = await supabase
+          const { data: challenges, error: newChallengesError } = await supabaseAdmin
             .from('user_challenges')
             .select('*')
             .order('purchase_date', { ascending: false });
@@ -459,7 +459,7 @@ export default function AdminMT5() {
           {activeTab === 'analytics' && <MT5AnalyticsTab />}
           {activeTab === 'certificates' && <CertificatesTab users={users} />}
           {activeTab === 'competitions' && <CompetitionsTab users={users} />}
-          {activeTab === 'user-details' && <UserDetailsTab users={users} accounts={accounts} />}
+
           {activeTab === 'profiles' && <UserProfilesTab users={users} accounts={accounts} />}
           {activeTab === 'breach' && <ManualBreachTab users={users} accounts={accounts} />}
           {activeTab === 'affiliates' && <AffiliatesManagementTab />}

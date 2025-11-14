@@ -669,28 +669,16 @@ export default function CryptoPayment() {
         }
 
         setTimeout(() => {
-          // For competition purchases, go to user details submission first
-          if (challengeType === 'COMPETITION') {
-            navigate('/user-details', {
-              state: {
-                accountSize,
-                challengeType,
-                paymentId: payment.id,
-                userChallenge: userChallenge,
-                hasAddOn
-              }
-            });
-          } else {
-            // For other challenge types, go directly to dashboard
-            navigate('/dashboard', {
-              state: {
-                showWelcome: true,
-                accountSize,
-                challengeType,
-                paymentId: payment.id
-              }
-            });
-          }
+          // All challenge types now go directly to dashboard
+          navigate('/dashboard', {
+            state: {
+              showWelcome: true,
+              accountSize,
+              challengeType,
+              paymentId: payment.id,
+              hasAddOn: challengeType === 'COMPETITION' ? hasAddOn : undefined
+            }
+          });
         }, 2000);
       } else {
         setVerificationStatus('failed');
