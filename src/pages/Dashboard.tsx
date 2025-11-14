@@ -303,8 +303,8 @@ function OverviewSection({ user, navigate }: { user: any; navigate: (path: strin
         }
 
       // Map challenge type data to challenges
-      challenges = rawChallenges?.map((c: any) => {
-        const challengeType = challengeTypes?.find((ct: any) => ct.id === c.challenge_type_id);
+      challenges = rawChallenges?.map((c) => {
+        const challengeType = challengeTypes?.find((ct) => ct.id === c.challenge_type_id);
         return {
           ...c,
           challenge_type: challengeType ? {
@@ -2191,22 +2191,40 @@ function AffiliatesSection({ user }: { user: any }) {
 
   async function fetchAffiliateData() {
     try {
+      console.log('Fetching affiliate data for user:', user);
+      console.log('User ID:', user?.id);
+      console.log('API URL:', import.meta.env.VITE_API_URL);
+
+      if (!user?.id) {
+        console.error('No user ID available');
+        setLoading(false);
+        return;
+      }
+
       // First, create affiliate account if doesn't exist
-      console.log('Fetching affiliate data for user:', user.id);
+      console.log('Creating affiliate account...');
       const createRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/affiliates/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: user.id })
       });
 
+      console.log('Create response status:', createRes.status);
       const createData = await createRes.json();
+      console.log('Create response data:', createData);
 
       // Then fetch stats
+      console.log('Fetching affiliate stats...');
       const statsRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/affiliates/stats/${user.id}`);
+      console.log('Stats response status:', statsRes.status);
       const statsData = await statsRes.json();
+      console.log('Stats response data:', statsData);
 
       if (statsData.success) {
+        console.log('Setting affiliate data:', statsData.data);
         setAffiliateData(statsData.data);
+      } else {
+        console.error('Stats request failed:', statsData);
       }
     } catch (error) {
       console.error('Error fetching affiliate data:', error);
