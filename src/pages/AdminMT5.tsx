@@ -35,6 +35,7 @@ interface UserProfile {
   last_name?: string;
   friendly_id?: string;
   full_name: string;
+  display_name?: string;
 }
 
 export default function AdminMT5() {
@@ -47,6 +48,9 @@ export default function AdminMT5() {
   const [activeTab, setActiveTab] = useState<'accounts' | 'analytics' | 'certificates' | 'competitions' | 'user-details' | 'profiles' | 'breach' | 'affiliates' | 'propfirm'>('accounts');
   const [phaseSubTabs, setPhaseSubTabs] = useState<{[key: string]: 'phase1' | 'phase2' | 'live'}>({});
   const [error, setError] = useState<string | null>(null);
+  const [allProfilesData, setAllProfilesData] = useState<any[]>([]);
+  const [authUsersData, setAuthUsersData] = useState<any[]>([]);
+  const [authUsersMap, setAuthUsersMap] = useState<Map<string, any>>(new Map());
 
   useEffect(() => {
     loadData();
@@ -232,10 +236,10 @@ export default function AdminMT5() {
         pending_payment: challengesData?.filter((c: any) => c.status === 'pending_payment').length || 0,
       });
 
-      // Separate pending challenges (no trading_account_id yet)
+      // Separate pending challenges (no trading_account_id yet OR credentials not sent)
       // Include all statuses except 'pending_payment' (which means payment not completed)
       const pending = challengesData?.filter((c: any) => {
-        const needsCredentials = !c.trading_account_id && c.status !== 'pending_payment';
+        const needsCredentials = (!c.trading_account_id || !c.credentials_sent) && c.status !== 'pending_payment';
         if (needsCredentials) {
           console.log('🔍 Pending challenge found:', {
             id: c.id,
@@ -243,7 +247,9 @@ export default function AdminMT5() {
             status: c.status,
             account_size: c.account_size,
             challenge_type: c.challenge_type,
-            purchase_date: c.purchase_date
+            purchase_date: c.purchase_date,
+            has_trading_id: !!c.trading_account_id,
+            credentials_sent: c.credentials_sent
           });
         }
         return needsCredentials;
@@ -470,6 +476,7 @@ export default function AdminMT5() {
       {showCreateModal && (
         <CreateAccountModal
           users={users}
+          pendingChallenges={pendingChallenges}
           onClose={() => setShowCreateModal(false)}
           onSuccess={() => {
             setShowCreateModal(false);
@@ -1016,7 +1023,7 @@ function AccountsTab({ accounts, pendingChallenges, searchTerm, setSearchTerm, s
                   account={account}
                   onUpdate={loadData}
                   onMarkPassed={handleMarkAsPassed}
-                  onEditAccount={(acc: MT5Account) => {
+                  onEditAccount={(acc: any) => {
                     setSelectedAccount(acc);
                     setEditFormData({
                       mt5_login: acc.mt5_login,
@@ -1026,7 +1033,7 @@ function AccountsTab({ accounts, pendingChallenges, searchTerm, setSearchTerm, s
                     });
                     setShowEditModal(true);
                   }}
-                  onAssignPhase={(acc: MT5Account) => {
+                  onAssignPhase={(acc: any) => {
                     setSelectedAccount(acc);
                     setPhaseFormData({
                       phase: 1,
@@ -1708,7 +1715,7 @@ function CredentialField({ label, value, onCopy, copied, showPassword, onToggleP
   );
 }
 
-function CreateAccountModal({ users, onClose, onSuccess }: any) {
+function CreateAccountModal({ users, onClose, onSuccess, pendingChallenges: propPendingChallenges }: any) {
   const [pendingChallenges, setPendingChallenges] = useState<any[]>([]);
   const [selectedChallenge, setSelectedChallenge] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -1721,163 +1728,20 @@ function CreateAccountModal({ users, onClose, onSuccess }: any) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadPendingChallenges();
-  }, []);
-
-  async function loadPendingChallenges() {
-    try {
-      console.log('🔄 Loading pending challenges from ALL databases (PRIMARY + BOLT + OLD)...');
-
-      // PRIMARY DATABASE
-      let newChallenges = null;
-      let newProfilesData = null;
-
-      if (supabase && supabaseAdmin) {
-        try {
-          const { data: challenges, error: newChallengesError } = await supabase
-            .from('user_challenges')
-            .select('*')
-            .is('trading_account_id', null)
-            .neq('status', 'pending_payment')
-            .order('purchase_date', { ascending: false });
-
-          if (newChallengesError) {
-            console.error('Error loading PRIMARY DB challenges:', newChallengesError);
-          } else {
-            newChallenges = challenges;
-          }
-
-          const { data: profiles, error: newProfilesError } = await supabaseAdmin
-            .from('user_profile')
-            .select('user_id, email, first_name, last_name, friendly_id');
-
-          if (newProfilesError) {
-            console.warn('Could not load PRIMARY DB user profiles:', newProfilesError);
-          } else {
-            newProfilesData = profiles;
-          }
-        } catch (primaryError: any) {
-          console.error('PRIMARY Database error in pending challenges:', primaryError.message);
-        }
-      }
-
-      // BOLT DATABASE
-      let boltChallenges = null;
-      let boltProfilesData = null;
-
-      if (boltSupabase) {
-        try {
-          const { data: challenges, error: boltChallengesError } = await boltSupabase
-            .from('user_challenges')
-            .select('*')
-            .is('trading_account_id', null)
-            .neq('status', 'pending_payment')
-            .order('purchase_date', { ascending: false });
-
-          if (boltChallengesError) {
-            console.warn('Error loading BOLT DB challenges:', boltChallengesError.message);
-          } else {
-            boltChallenges = challenges;
-          }
-
-          const { data: profiles, error: boltProfilesError } = await boltSupabase
-            .from('user_profile')
-            .select('user_id, first_name, last_name, friendly_id');
-
-          if (boltProfilesError) {
-            console.warn('Could not load BOLT DB user profiles:', boltProfilesError.message);
-          } else {
-            boltProfilesData = profiles;
-          }
-        } catch (boltError: any) {
-          console.warn('⚠️ BOLT Database unavailable for pending challenges:', boltError.message || 'Connection failed');
-        }
-      }
-
-      // OLD DATABASE
-      let oldChallenges = null;
-      let oldProfilesData = null;
-
-      if (oldSupabase) {
-        try {
-          const { data: challenges, error: oldChallengesError } = await oldSupabase
-            .from('user_challenges')
-            .select('*')
-            .is('trading_account_id', null)
-            .neq('status', 'pending_payment')
-            .order('purchase_date', { ascending: false });
-
-          if (oldChallengesError) {
-            console.warn('Error loading OLD DB challenges:', oldChallengesError.message);
-          } else {
-            oldChallenges = challenges;
-          }
-
-          const { data: profiles, error: oldProfilesError } = await oldSupabase
-            .from('user_profile')
-            .select('user_id, first_name, last_name, friendly_id');
-
-          if (oldProfilesError) {
-            console.warn('Could not load OLD DB user profiles:', oldProfilesError.message);
-          } else {
-            oldProfilesData = profiles;
-          }
-        } catch (oldDbError: any) {
-          console.warn('⚠️ OLD Database unavailable for pending challenges:', oldDbError.message || 'Connection failed');
-        }
-      }
-
-      // Merge profiles from all sources
-      const allProfilesData = [
-        ...(newProfilesData || []),
-        ...(boltProfilesData || []),
-        ...(oldProfilesData || [])
-      ];
-      const usersMap = new Map(allProfilesData.map((p: any) => {
-        const fullName = `${p.first_name || ''} ${p.last_name || ''}`.trim();
-        return [
-          p.user_id,
-          {
-            id: p.user_id,
-            email: p.email,
-            full_name: fullName,
-            display_name: fullName || p.email || p.friendly_id || 'Unknown'
-          }
-        ];
-      }));
-
-      // Merge challenges and add source tracking
-      const primaryChallengesWithSource = (newChallenges || []).map((c: any) => ({ ...c, _db_source: 'PRIMARY' }));
-      const boltChallengesWithSource = (boltChallenges || []).map((c: any) => ({ ...c, _db_source: 'BOLT' }));
-      const oldChallengesWithSource = (oldChallenges || []).map((c: any) => ({ ...c, _db_source: 'OLD' }));
-      const allChallenges = [
-        ...primaryChallengesWithSource,
-        ...boltChallengesWithSource,
-        ...oldChallengesWithSource
-      ];
-
-      console.log('✅ Pending challenges - PRIMARY:', newChallenges?.length || 0, '| BOLT:', boltChallenges?.length || 0, '| OLD:', oldChallenges?.length || 0);
-
-      // Merge user data with challenges
-      const enrichedChallenges = allChallenges.map(challenge => {
-        const user = usersMap.get(challenge.user_id);
-        return {
-          ...challenge,
-          users: {
-            email: user?.display_name || 'Unknown',
-            full_name: user?.full_name || 'N/A'
-          }
-        };
-      });
-
-      setPendingChallenges(enrichedChallenges);
-    } catch (error) {
-      console.error('Error loading pending challenges:', error);
+    console.log('Modal opened, propPendingChallenges:', propPendingChallenges);
+    console.log('Modal opened, propPendingChallenges length:', propPendingChallenges?.length || 0);
+    // Use prop data if available, otherwise show empty state
+    if (propPendingChallenges && propPendingChallenges.length > 0) {
+      console.log('Modal received pending challenges:', propPendingChallenges.length);
+      console.log('Sample challenge:', propPendingChallenges[0]);
+      setPendingChallenges(propPendingChallenges);
+      setLoading(false);
+    } else {
+      console.log('Modal received no pending challenges or empty array');
       setPendingChallenges([]);
-    } finally {
       setLoading(false);
     }
-  }
+  }, [propPendingChallenges]);
 
   const handleChallengeSelect = (challengeId: string) => {
     if (!challengeId) {
@@ -2020,11 +1884,11 @@ function CreateAccountModal({ users, onClose, onSuccess }: any) {
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none"
               >
                 <option value="">-- Select Challenge --</option>
-                {pendingChallenges.map((challenge: any) => (
-                  <option key={challenge.id} value={challenge.id} className="bg-deep-space">
-                    [{challenge._db_source}] {challenge.users?.email} - ${parseFloat(challenge.account_size).toLocaleString()} - {challenge.challenge_type_id}
-                  </option>
-                ))}
+        {pendingChallenges.map((challenge: any) => (
+          <option key={challenge.id} value={challenge.id} className="bg-deep-space">
+            [{challenge._db_source || 'PRIMARY'}] {challenge.user_email} - ${parseFloat(challenge.account_size).toLocaleString()} - {challenge.challenge_type}
+          </option>
+        ))}
               </select>
             </div>
 
@@ -2034,7 +1898,11 @@ function CreateAccountModal({ users, onClose, onSuccess }: any) {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <span className="text-white/60">User:</span>
-                    <div className="font-semibold">{selectedChallenge.users?.email}</div>
+                    <div className="font-semibold">{selectedChallenge.user_email || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <span className="text-white/60">Name:</span>
+                    <div className="font-semibold">{selectedChallenge.user_name || 'N/A'}</div>
                   </div>
                   <div>
                     <span className="text-white/60">Account Size:</span>
@@ -2046,7 +1914,11 @@ function CreateAccountModal({ users, onClose, onSuccess }: any) {
                   </div>
                   <div>
                     <span className="text-white/60">Purchased:</span>
-                    <div className="font-semibold">{new Date(selectedChallenge.purchase_date).toLocaleDateString()}</div>
+                    <div className="font-semibold">{new Date(selectedChallenge.purchase_date || selectedChallenge.created_at).toLocaleDateString()}</div>
+                  </div>
+                  <div>
+                    <span className="text-white/60">Status:</span>
+                    <div className="font-semibold">{selectedChallenge.status}</div>
                   </div>
                 </div>
               </div>
@@ -2329,26 +2201,20 @@ function MT5AnalyticsTab() {
             .eq('is_valid', true)
             .maybeSingle();
 
-          // Get latest snapshot
-          if (!supabase) {
-            throw new Error('Supabase client is not initialized');
-          }
-          const { data: snapshot } = await supabase
-            .from('mt5_account_snapshots')
-            .select('*')
-            .eq('challenge_id', challenge.id)
-            .eq('is_latest', true)
-            .maybeSingle();
+      // Get latest snapshot
+      const { data: snapshot } = await supabase!
+        .from('mt5_account_snapshots')
+        .select('*')
+        .eq('challenge_id', challenge.id)
+        .eq('is_latest', true)
+        .maybeSingle();
 
-          // Get violations count
-          if (!supabase) {
-            throw new Error('Supabase client is not initialized');
-          }
-          const { data: violations, count: violationsCount } = await supabase
-            .from('mt5_rule_violations')
-            .select('*', { count: 'exact', head: true })
-            .eq('challenge_id', challenge.id)
-            .eq('is_resolved', false);
+      // Get violations count
+      const { data: violations, count: violationsCount } = await supabase!
+        .from('mt5_rule_violations')
+        .select('*', { count: 'exact', head: true })
+        .eq('challenge_id', challenge.id)
+        .eq('is_resolved', false);
 
           return {
             challenge_id: challenge.id,
