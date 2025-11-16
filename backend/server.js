@@ -107,6 +107,9 @@ const allowedOrigins = [
   'https://www.fund8r.com',
   'http://fund8r.com',
   'http://www.fund8r.com',
+  'https://*.webcontainer-api.io',
+  'https://stackblitz.com',
+  'https://*.stackblitz.io',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
