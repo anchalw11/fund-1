@@ -40,8 +40,8 @@ export default function Affiliate() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const affiliateLink = stats?.affiliate?.affiliate_code
-    ? `${window.location.origin}/signup?ref=${stats.affiliate.affiliate_code}`
+  const affiliateLink = stats?.affiliate_code
+    ? `${window.location.origin}/signup?ref=${stats.affiliate_code}`
     : '';
 
   const tierInfo = {
@@ -129,7 +129,7 @@ export default function Affiliate() {
                 <div className="text-right">
                   <p className="text-sm text-gray-300 mb-1">Next Tier Progress</p>
                   <p className="text-2xl font-bold text-white">
-                    ${stats?.affiliate?.total_earnings?.toFixed(0) || 0} / $5,000
+                    ${stats?.total_earnings?.toFixed(0) || 0} / $5,000
                   </p>
                 </div>
               </div>
@@ -139,7 +139,7 @@ export default function Affiliate() {
                   className="bg-gradient-to-r from-blue-500 to-purple-600 h-4 rounded-full transition-all duration-500"
                   style={{
                     width: `${Math.min(
-                      ((stats?.affiliate?.total_earnings || 0) / 5000) * 100,
+                      ((stats?.total_earnings || 0) / 5000) * 100,
                       100
                     )}%`
                   }}
