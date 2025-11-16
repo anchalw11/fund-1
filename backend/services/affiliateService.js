@@ -141,106 +141,112 @@ class AffiliateService {
         .eq('user_id', userId)
         .single();
 
-      if (error) {
-        console.error('Error fetching affiliate:', error);
-        return null;
-      }
-
-      if (!affiliate) {
-        return null;
+      if (error || !affiliate) {
+        console.log('No affiliate found, returning safe defaults');
+        return {
+          affiliate_code: '',
+          total_referrals: 0,
+          active_referrals: 0,
+          total_earnings: 0,
+          available_balance: 0,
+          pending_earnings: 0,
+          paid_earnings: 0
+        };
       }
 
       console.log('Found affiliate:', affiliate.id, affiliate.referral_code);
 
-      // Try to get referrals, handle missing table gracefully
-      let referralsArray = [];
       try {
-        const { data: referrals, error: refError } = await supabase
-          .from('referrals')
-          .select('*, users:referred_user_id(email, full_name)')
-          .eq('affiliate_id', affiliate.id);
+        // Try to get referrals
+        let referralsArray = [];
+        try {
+          const { data: referrals, error: refError } = await supabase
+            .from('referrals')
+            .select('*, users:referred_user_id(email, full_name)')
+            .eq('affiliate_id', affiliate.id);
 
-        if (refError) {
-          if (refError.message.includes('does not exist')) {
-            console.warn('Referrals table does not exist, using affiliate_referrals');
-            try {
-              const { data: affiliateReferrals, error: affRefError } = await supabase
-                .from('affiliate_referrals')
-                .select('*')
-                .eq('affiliate_id', affiliate.id);
+          if (!refError && referrals) {
+            referralsArray = referrals;
+          }
+        } catch (e) {
+          // ignore
+        }
 
-              if (affRefError) {
-                console.error('Error fetching affiliate_referrals:', affRefError);
-                referralsArray = [];
-              } else {
-                referralsArray = affiliateReferrals || [];
-              }
-            } catch (fallbackError) {
-              console.error('Error in fallback:', fallbackError);
-              referralsArray = [];
+        try {
+          if (referralsArray.length === 0) {
+            const { data: affiliateReferrals, error: affRefError } = await supabase
+              .from('affiliate_referrals')
+              .select('*')
+              .eq('affiliate_id', affiliate.id);
+
+            if (!affRefError && affiliateReferrals) {
+              referralsArray = affiliateReferrals;
             }
-          } else {
-            console.error('Error fetching referrals:', refError);
-            referralsArray = [];
           }
-        } else {
-          referralsArray = referrals || [];
+        } catch (e) {
+          // ignore
         }
-      } catch (error) {
-        console.error('Error in referrals query:', error);
-        referralsArray = [];
-      }
 
-      // Try to get commissions, handle missing table gracefully
-      let commissionsArray = [];
-      try {
-        const { data: commissions, error: commError } = await supabase
-          .from('commissions')
-          .select('*')
-          .eq('affiliate_id', affiliate.id);
+        referralsArray = Array.isArray(referralsArray) ? referralsArray : [];
 
-        if (commError) {
-          if (commError.message.includes('does not exist')) {
-            console.warn('Commissions table does not exist, using empty array');
-            commissionsArray = [];
-          } else {
-            console.error('Error fetching commissions:', commError);
-            commissionsArray = [];
+        let commissionsArray = [];
+        try {
+          const { data: commissions, error: commError } = await supabase
+            .from('commissions')
+            .select('*')
+            .eq('affiliate_id', affiliate.id);
+
+          if (!commError && commissions) {
+            commissionsArray = commissions;
           }
-        } else {
-          commissionsArray = commissions || [];
+        } catch (e) {
+          // ignore
         }
+
+        commissionsArray = Array.isArray(commissionsArray) ? commissionsArray : [];
+
+        const pendingEarnings = commissionsArray
+          .filter(c => c && c.status === 'pending')
+          .reduce((sum, c) => sum + (c.amount || 0), 0);
+
+        const paidEarnings = commissionsArray
+          .filter(c => c && c.status === 'paid')
+          .reduce((sum, c) => sum + (c.amount || 0), 0);
+
+        const activeReferralsCount = referralsArray.filter(r => r && (r.status === 'completed' || r.status === 'approved')).length;
+
+        return {
+          affiliate_code: affiliate.referral_code || '',
+          total_referrals: referralsArray.length,
+          active_referrals: activeReferralsCount,
+          total_earnings: affiliate.total_earnings || 0,
+          available_balance: (affiliate.available_balance || affiliate.total_earnings || 0) - paidEarnings,
+          pending_earnings: pendingEarnings,
+          paid_earnings: paidEarnings
+        };
       } catch (error) {
-        console.error('Error in commissions query:', error);
-        commissionsArray = [];
+        console.error('Inner error:', error);
+        return {
+          affiliate_code: '',
+          total_referrals: 0,
+          active_referrals: 0,
+          total_earnings: 0,
+          available_balance: 0,
+          pending_earnings: 0,
+          paid_earnings: 0
+        };
       }
-
-      // Ensure arrays are actually arrays
-      referralsArray = Array.isArray(referralsArray) ? referralsArray : [];
-      commissionsArray = Array.isArray(commissionsArray) ? commissionsArray : [];
-
-      const pendingEarnings = commissionsArray
-        .filter(c => c.status === 'pending')
-        .reduce((sum, c) => sum + (c.amount || 0), 0);
-
-      const paidEarnings = commissionsArray
-        .filter(c => c.status === 'paid')
-        .reduce((sum, c) => sum + (c.amount || 0), 0);
-
-      const activeReferralsCount = referralsArray.filter(r => r.status === 'completed' || r.status === 'approved').length;
-
-      return {
-        affiliate_code: affiliate.referral_code || '',
-        total_referrals: referralsArray.length,
-        active_referrals: activeReferralsCount,
-        total_earnings: affiliate.total_earnings || 0,
-        available_balance: (affiliate.available_balance || affiliate.total_earnings || 0) - paidEarnings,
-        pending_earnings: pendingEarnings,
-        paid_earnings: paidEarnings
-      };
     } catch (error) {
       console.error('Error getting affiliate stats:', error);
-      throw error;
+      return {
+        affiliate_code: '',
+        total_referrals: 0,
+        active_referrals: 0,
+        total_earnings: 0,
+        available_balance: 0,
+        pending_earnings: 0,
+        paid_earnings: 0
+      };
     }
   }
 
