@@ -337,21 +337,46 @@ export default function AdminMT5() {
 
       setAccounts(formattedAccounts);
 
-      // Create users list from all unique user_ids in profiles
-      const usersData = allProfilesData.map((p: any) => ({
-        id: p.user_id,
-        user_id: p.user_id,
-        email: p.email,
-        full_name: `${p.first_name || ''} ${p.last_name || ''}`.trim(),
-        friendly_id: p.friendly_id,
-      }));
-      setUsers(usersData);
+            // Create comprehensive users list from all sources (profiles + auth users)
+            const usersMap = new Map<string, any>();
+
+            // First, add all profile users
+            allProfilesData.forEach((p: any) => {
+              usersMap.set(p.user_id, {
+                id: p.user_id,
+                user_id: p.user_id,
+                email: p.email,
+                full_name: `${p.first_name || ''} ${p.last_name || ''}`.trim(),
+                friendly_id: p.friendly_id,
+                source: 'profile'
+              });
+            });
+
+            // Then, add any auth users not already included
+            authUsersData.forEach((u: any) => {
+              usersMap.set(u.id, {
+                id: u.id,
+                user_id: u.id,
+                email: u.email,
+                full_name: authUsersMap.get(u.id)?.full_name || u.email,
+                friendly_id: authUsersMap.get(u.id)?.friendly_id || null,
+                source: 'auth'
+              });
+            });
+
+            const comprehensiveUsers = Array.from(usersMap.values());
+
+      console.log('📊 Users for affiliate management:', comprehensiveUsers.length);
+      console.log('   - From profiles:', allProfilesData.length);
+      console.log('   - Total comprehensive:', comprehensiveUsers.length);
+
+      setUsers(comprehensiveUsers);
       
       setLoading(false);
       setError(null);
       
       console.log('✅ Data loaded successfully:', {
-        users: usersData.length,
+        users: comprehensiveUsers.length,
         accounts: formattedAccounts.length,
         pendingChallenges: pending.length,
         totalChallenges: challengesData.length
@@ -454,7 +479,6 @@ export default function AdminMT5() {
             <AccountsTab
               accounts={accounts}
               pendingChallenges={pendingChallenges}
-              users={users}
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
               setShowCreateModal={setShowCreateModal}
@@ -468,7 +492,7 @@ export default function AdminMT5() {
 
           {activeTab === 'profiles' && <UserProfilesTab users={users} accounts={accounts} />}
           {activeTab === 'breach' && <ManualBreachTab users={users} accounts={accounts} />}
-          {activeTab === 'affiliates' && <AffiliatesManagementTab />}
+          {activeTab === 'affiliates' && <AffiliatesManagementTab users={users} />}
           {activeTab === 'propfirm' && <AdminPropFirm />}
         </div>
       </div>
@@ -507,7 +531,7 @@ function TabButton({ active, onClick, icon, label }: any) {
   );
 }
 
-function AccountsTab({ accounts, pendingChallenges, searchTerm, setSearchTerm, setShowCreateModal, loadData }: any) {
+function AccountsTab({ accounts, pendingChallenges, searchTerm, setSearchTerm, setShowCreateModal, loadData }: { accounts: MT5Account[]; pendingChallenges: any[]; searchTerm: string; setSearchTerm: (term: string) => void; setShowCreateModal: (show: boolean) => void; loadData: () => void }) {
   const [pendingSearchTerm, setPendingSearchTerm] = useState('');
   const [notes, setNotes] = useState<{ [key: string]: { userNote: string; adminNote: string } }>({});
   const [activeSubTab, setActiveSubTab] = useState('pending');
@@ -911,19 +935,8 @@ function AccountsTab({ accounts, pendingChallenges, searchTerm, setSearchTerm, s
                           </div>
                         </div>
                       </div>
-                      <div className="flex justify-end items-center space-x-4">
-                        <button
-                          onClick={() => handleReject(challenge.id)}
-                          className="px-4 py-2 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-all"
-                        >
-                          Reject Account
-                        </button>
-                        <button
-                          onClick={() => setShowCreateModal(true)}
-                          className="px-4 py-2 bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg font-semibold hover:scale-105 transition-transform whitespace-nowrap"
-                        >
-                          Assign MT5
-                        </button>
+                      <div className="flex justify-end">
+                        <span className="text-xs text-white/60">Use tab navigation for account management</span>
                       </div>
                     </div>
                   </div>
@@ -1023,24 +1036,24 @@ function AccountsTab({ accounts, pendingChallenges, searchTerm, setSearchTerm, s
                   account={account}
                   onUpdate={loadData}
                   onMarkPassed={handleMarkAsPassed}
-                  onEditAccount={(acc: any) => {
-                    setSelectedAccount(acc);
+                  onEditAccount={(selectedAccount: MT5Account) => {
+                    setSelectedAccount(selectedAccount);
                     setEditFormData({
-                      mt5_login: acc.mt5_login,
-                      mt5_password: acc.mt5_password,
-                      mt5_server: acc.mt5_server,
-                      account_size: acc.account_size
+                      mt5_login: selectedAccount.mt5_login,
+                      mt5_password: selectedAccount.mt5_password,
+                      mt5_server: selectedAccount.mt5_server,
+                      account_size: selectedAccount.account_size
                     });
                     setShowEditModal(true);
                   }}
-                  onAssignPhase={(acc: any) => {
-                    setSelectedAccount(acc);
+                  onAssignPhase={(selectedAccount: MT5Account) => {
+                    setSelectedAccount(selectedAccount);
                     setPhaseFormData({
                       phase: 1,
                       mt5_login: '',
                       mt5_password: '',
                       mt5_server: 'MetaQuotes-Demo',
-                      account_size: acc.account_size * 2
+                      account_size: selectedAccount.account_size * 2
                     });
                     setShowPhaseModal(true);
                   }}
@@ -4279,16 +4292,25 @@ function ManualBreachTab({ users, accounts }: { users: any[]; accounts: any[] })
   );
 }
 
-function AffiliatesManagementTab() {
+function AffiliatesManagementTab({ users }: { users: any[] }) {
   const [affiliates, setAffiliates] = useState<any[]>([]);
   const [payouts, setPayouts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAffiliate, setSelectedAffiliate] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeSubTab, setActiveSubTab] = useState<'overview' | 'assign'>('overview');
+
+  // Assign tab state
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [affiliateCode, setAffiliateCode] = useState('');
+  const [commissionRate, setCommissionRate] = useState(10);
+  const [assigning, setAssigning] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   useEffect(() => {
     loadAffiliateData();
-  }, []);
+    // No need to load adminUsers anymore, we now use the users prop passed from parent
+  }, [activeSubTab]);
 
   async function loadAffiliateData() {
     try {
@@ -4303,16 +4325,22 @@ function AffiliatesManagementTab() {
 
       if (affiliatesError) throw affiliatesError;
 
-      // Fetch payouts
-      const { data: payoutsData, error: payoutsError } = await supabase
-        .from('payouts')
-        .select('*')
-        .order('requested_at', { ascending: false });
+      // Fetch payouts from correct table
+      try {
+        const { data: payoutsData, error: payoutsError } = await supabase
+          .from('payouts_affiliate')
+          .select('*')
+          .order('requested_at', { ascending: false });
 
-      if (payoutsError) throw payoutsError;
+        if (!payoutsError) {
+          setPayouts(payoutsData || []);
+        }
+      } catch (e) {
+        console.warn('payouts_affiliate table may not exist', e.message);
+        setPayouts([]);
+      }
 
       setAffiliates(affiliatesData || []);
-      setPayouts(payoutsData || []);
     } catch (error) {
       console.error('Error loading affiliate data:', error);
     } finally {
@@ -4320,16 +4348,114 @@ function AffiliatesManagementTab() {
     }
   }
 
+  async function loadAdminUsers() {
+    try {
+      const response = await api.getAdminUsers();
+      if (response.success) {
+        // Admin users are now passed from parent component
+      }
+    } catch (error: any) {
+      console.error('Error loading admin users:', error);
+    }
+  }
+
+  async function handleAssignAffiliateCode() {
+    if (!selectedUser || !affiliateCode.trim()) {
+      alert('Please select a user and enter an affiliate code');
+      return;
+    }
+
+    setAssigning(true);
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
+
+      console.log('🚀 Assigning affiliate code to user...');
+
+      const response = await fetch(`${apiUrl}/affiliates/admin/assign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: selectedUser.id,
+          affiliate_code: affiliateCode.trim().toUpperCase(),
+          commission_rate: commissionRate,
+          admin_assigned: true
+        })
+      });
+
+      if (!response.ok) {
+        let errorMessage = `Server error: ${response.status} ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to assign affiliate code');
+      }
+
+      console.log('✅ Affiliate code assigned successfully:', result);
+
+      alert(`✅ Affiliate code "${affiliateCode}" assigned successfully to ${selectedUser.email}!`);
+
+      // Clear form first
+      setSelectedUser(null);
+      setAffiliateCode('');
+      setCommissionRate(10);
+
+      // Wait a brief moment for database consistency, then refresh
+      setTimeout(() => {
+        loadAffiliateData();
+      }, 500);
+
+    } catch (error: any) {
+      console.error('❌ Error assigning affiliate code:', error);
+      const errorMsg = error.message || 'Unknown error occurred';
+      alert(`❌ Failed to assign affiliate code:\n\n${errorMsg}\n\nPlease check the console for details or contact support.`);
+    } finally {
+      setAssigning(false);
+    }
+  }
+
+  async function handleSendNotification() {
+    if (!selectedUser) {
+      alert('Please select a user first');
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const response = await api.sendAffiliateNotification(selectedUser.id);
+
+      if (response.success) {
+        alert(`✅ Affiliate code notification sent successfully to ${selectedUser.email}!`);
+      } else {
+        throw new Error(response.error || 'Failed to send notification');
+      }
+    } catch (error: any) {
+      console.error('Error sending notification:', error);
+      alert(`❌ Failed to send notification: ${error.message}`);
+    } finally {
+      setSendingEmail(false);
+    }
+  }
+
   async function handlePayoutAction(payoutId: string, action: 'approve' | 'reject') {
     try {
       const newStatus = action === 'approve' ? 'processing' : 'rejected';
-      
+
       if (!supabase) {
         throw new Error('Supabase client is not initialized');
       }
       const { error } = await supabase
-        .from('payouts')
-        .update({ 
+        .from('payouts_affiliate')
+        .update({
           status: newStatus,
           processed_at: new Date().toISOString()
         })
@@ -4345,8 +4471,8 @@ function AffiliatesManagementTab() {
     }
   }
 
-  const filteredAffiliates = affiliates.filter(aff => 
-    aff.affiliate_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredAffiliates = affiliates.filter(aff =>
+    aff.referral_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     aff.user_id?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -4363,130 +4489,280 @@ function AffiliatesManagementTab() {
           <h2 className="text-2xl font-bold mb-2">
             <GradientText>Affiliate Management</GradientText>
           </h2>
-          <p className="text-white/60">Manage affiliates and payout requests</p>
+          <p className="text-white/60">Manage affiliates, assign codes, and handle payouts</p>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid md:grid-cols-4 gap-6 mb-8">
-        <div className="glass-card p-6">
-          <div className="text-sm text-white/60 mb-2">Total Affiliates</div>
-          <div className="text-3xl font-bold text-electric-blue">{affiliates.length}</div>
-        </div>
-        <div className="glass-card p-6">
-          <div className="text-sm text-white/60 mb-2">Pending Payouts</div>
-          <div className="text-3xl font-bold text-yellow-400">{pendingPayouts.length}</div>
-        </div>
-        <div className="glass-card p-6">
-          <div className="text-sm text-white/60 mb-2">Total Earnings</div>
-          <div className="text-3xl font-bold text-neon-green">${totalEarnings.toFixed(2)}</div>
-        </div>
-        <div className="glass-card p-6">
-          <div className="text-sm text-white/60 mb-2">Total Paid</div>
-          <div className="text-3xl font-bold text-neon-purple">${totalPaid.toFixed(2)}</div>
-        </div>
+      {/* Sub Tab Navigation */}
+      <div className="flex gap-4 mb-6">
+        <button
+          onClick={() => setActiveSubTab('overview')}
+          className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+            activeSubTab === 'overview'
+              ? 'bg-gradient-to-r from-electric-blue to-neon-purple text-white'
+              : 'bg-white/10 hover:bg-white/20 text-white/70'
+          }`}
+        >
+          Overview & Payouts
+        </button>
+        <button
+          onClick={() => setActiveSubTab('assign')}
+          className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+            activeSubTab === 'assign'
+              ? 'bg-gradient-to-r from-electric-blue to-neon-purple text-white'
+              : 'bg-white/10 hover:bg-white/20 text-white/70'
+          }`}
+        >
+          Assign Affiliate Codes
+        </button>
       </div>
 
-      {/* Pending Payouts */}
-      {pendingPayouts.length > 0 && (
-        <div className="glass-card p-6 mb-8">
-          <h3 className="text-xl font-bold mb-4">Pending Payout Requests</h3>
-          <div className="space-y-4">
-            {pendingPayouts.map((payout) => (
-              <div key={payout.id} className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-yellow-500/30">
-                <div>
-                  <div className="font-semibold">${payout.amount.toFixed(2)}</div>
-                  <div className="text-sm text-white/60">
-                    Affiliate: {payout.affiliates?.affiliate_code || 'Unknown'}
+      {activeSubTab === 'overview' && (
+        <>
+          {/* Stats Grid */}
+          <div className="grid md:grid-cols-4 gap-6 mb-8">
+            <div className="glass-card p-6">
+              <div className="text-sm text-white/60 mb-2">Total Affiliates</div>
+              <div className="text-3xl font-bold text-electric-blue">{affiliates.length}</div>
+            </div>
+            <div className="glass-card p-6">
+              <div className="text-sm text-white/60 mb-2">Pending Payouts</div>
+              <div className="text-3xl font-bold text-yellow-400">{pendingPayouts.length}</div>
+            </div>
+            <div className="glass-card p-6">
+              <div className="text-sm text-white/60 mb-2">Total Earnings</div>
+              <div className="text-3xl font-bold text-neon-green">${totalEarnings.toFixed(2)}</div>
+            </div>
+            <div className="glass-card p-6">
+              <div className="text-sm text-white/60 mb-2">Total Paid</div>
+              <div className="text-3xl font-bold text-neon-purple">${totalPaid.toFixed(2)}</div>
+            </div>
+          </div>
+
+          {/* Pending Payouts */}
+          {pendingPayouts.length > 0 && (
+            <div className="glass-card p-6 mb-8">
+              <h3 className="text-xl font-bold mb-4">Pending Payout Requests</h3>
+              <div className="space-y-4">
+                {pendingPayouts.map((payout) => (
+                  <div key={payout.id} className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-yellow-500/30">
+                    <div>
+                      <div className="font-semibold">${payout.amount.toFixed(2)}</div>
+                      <div className="text-sm text-white/60">
+                        Affiliate: {payout.affiliates?.referral_code || 'Unknown'}
+                      </div>
+                      <div className="text-xs text-white/40">
+                        Requested: {new Date(payout.requested_at).toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handlePayoutAction(payout.id, 'approve')}
+                        className="px-4 py-2 bg-neon-green/20 text-neon-green rounded-lg hover:bg-neon-green/30 transition-colors"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handlePayoutAction(payout.id, 'reject')}
+                        className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors"
+                      >
+                        Reject
+                      </button>
+                    </div>
                   </div>
-                  <div className="text-xs text-white/40">
-                    Requested: {new Date(payout.requested_at).toLocaleString()}
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Affiliates List */}
+          <div className="glass-card p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold">All Affiliates</h3>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" size={18} />
+                <input
+                  type="text"
+                  placeholder="Search by code or user ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-12 text-white/60">Loading affiliates...</div>
+            ) : filteredAffiliates.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-white/10">
+                      <th className="text-left py-3 px-4 text-white/60 font-semibold">Affiliate Code</th>
+                      <th className="text-left py-3 px-4 text-white/60 font-semibold">User</th>
+                      <th className="text-left py-3 px-4 text-white/60 font-semibold">Status</th>
+                      <th className="text-right py-3 px-4 text-white/60 font-semibold">Referrals</th>
+                      <th className="text-right py-3 px-4 text-white/60 font-semibold">Total Earnings</th>
+                      <th className="text-right py-3 px-4 text-white/60 font-semibold">Available</th>
+                      <th className="text-left py-3 px-4 text-white/60 font-semibold">Joined</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAffiliates.map((affiliate) => (
+                      <tr key={affiliate.id} className="border-b border-white/5 hover:bg-white/5">
+                        <td className="py-3 px-4 font-mono text-sm">{affiliate.referral_code}</td>
+                        <td className="py-3 px-4 text-sm">{affiliate.commission_rate}%</td>
+                        <td className="py-3 px-4">
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            affiliate.status === 'active' ? 'bg-neon-green/20 text-neon-green' : 'bg-red-500/20 text-red-400'
+                          }`}>
+                            {affiliate.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right">{affiliate.total_referrals || 0}</td>
+                        <td className="py-3 px-4 text-right font-semibold text-neon-green">
+                          ${(affiliate.total_earnings || 0).toFixed(2)}
+                        </td>
+                        <td className="py-3 px-4 text-right font-semibold text-electric-blue">
+                          ${(affiliate.available_balance || 0).toFixed(2)}
+                        </td>
+                        <td className="py-3 px-4 text-sm text-white/60">
+                          {new Date(affiliate.created_at).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12 text-white/60">
+                <Users size={64} className="mx-auto mb-4 opacity-30" />
+                <p>No affiliates found</p>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {activeSubTab === 'assign' && (
+        <div className="space-y-6">
+          {/* Assign Affiliate Code */}
+          <div className="glass-card p-8">
+            <h3 className="text-xl font-bold mb-6">
+              <GradientText>Assign New Affiliate Code</GradientText>
+            </h3>
+            <p className="text-white/60 mb-6">Select a user and assign them an affiliate code with custom commission rate</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* User Selection */}
+              <div className="bg-white/5 rounded-lg p-6">
+                <h4 className="text-lg font-bold mb-4">Select User</h4>
+                <SearchableUserDropdown
+                  onSelect={setSelectedUser}
+                  selectedUser={selectedUser}
+                  users={users.filter(user => !affiliates.some(aff => aff.user_id === user.id))}
+                />
+                {selectedUser && (
+                  <div className="mt-4 p-4 bg-electric-blue/10 border border-electric-blue/30 rounded-lg">
+                    <div className="font-semibold">{selectedUser.email}</div>
+                    <div className="text-sm text-white/60">{selectedUser.full_name}</div>
                   </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handlePayoutAction(payout.id, 'approve')}
-                    className="px-4 py-2 bg-neon-green/20 text-neon-green rounded-lg hover:bg-neon-green/30 transition-colors"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => handlePayoutAction(payout.id, 'reject')}
-                    className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors"
-                  >
-                    Reject
-                  </button>
+                )}
+              </div>
+
+              {/* Affiliate Code Setup */}
+              <div className="bg-white/5 rounded-lg p-6">
+                <h4 className="text-lg font-bold mb-4">Affiliate Settings</h4>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">Affiliate Code *</label>
+                    <input
+                      type="text"
+                      value={affiliateCode}
+                      onChange={(e) => setAffiliateCode(e.target.value.toUpperCase())}
+                      placeholder="Enter unique code (e.g., JOHN25)"
+                      className="w-full px-4 py-3 bg-deep-space border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none font-mono"
+                    />
+                    <p className="text-xs text-white/60 mt-1">Must be unique, letters and numbers only</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">Commission Rate (%)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="50"
+                      value={commissionRate}
+                      onChange={(e) => setCommissionRate(Number(e.target.value))}
+                      className="w-full px-4 py-3 bg-deep-space border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none"
+                    />
+                    <p className="text-xs text-white/60 mt-1">Percentage of referral purchases</p>
+                  </div>
                 </div>
               </div>
-            ))}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end items-center space-x-4 pt-6 border-t border-white/10 mt-6">
+              <button
+                onClick={handleSendNotification}
+                disabled={!selectedUser || sendingEmail}
+                className="px-6 py-3 bg-white/10 rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50 flex items-center space-x-2"
+              >
+                <Send size={18} />
+                <span>{sendingEmail ? 'Sending...' : 'Send Notification Email'}</span>
+              </button>
+              <button
+                onClick={handleAssignAffiliateCode}
+                disabled={!selectedUser || !affiliateCode.trim() || assigning}
+                className="btn-gradient disabled:opacity-50 flex items-center space-x-2"
+              >
+                <span>{assigning ? 'Assigning...' : 'Assign Affiliate Code'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Users Without Affiliate Codes */}
+          <div className="glass-card p-6">
+            <h3 className="text-xl font-bold mb-4">Recent Users (No Affiliate Code)</h3>
+            <p className="text-white/60 mb-6">Users who can be assigned affiliate codes</p>
+
+            {users.filter(user =>
+              !affiliates.some(aff => aff.user_id === user.id)
+            ).length === 0 ? (
+              <div className="text-center py-8 text-white/60">
+                All users already have affiliate codes assigned
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {users.filter(user =>
+                  !affiliates.some(aff => aff.user_id === user.id)
+                ).slice(0, 10).map((user: any) => (
+                  <button
+                    key={user.id}
+                    onClick={() => setSelectedUser(user)}
+                    className={`w-full text-left px-4 py-3 rounded-lg transition-all border ${
+                      selectedUser?.id === user.id
+                        ? 'border-electric-blue bg-electric-blue/10'
+                        : 'border-white/10 bg-white/5 hover:bg-white/10'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-semibold">{user.email}</div>
+                        <div className="text-sm text-white/60">{user.full_name || 'No name'}</div>
+                      </div>
+                      <div className="text-sm text-white/60">
+                        {new Date(user.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
-
-      {/* Affiliates List */}
-      <div className="glass-card p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold">All Affiliates</h3>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" size={18} />
-            <input
-              type="text"
-              placeholder="Search by code or user ID..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-electric-blue focus:outline-none"
-            />
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="text-center py-12 text-white/60">Loading affiliates...</div>
-        ) : filteredAffiliates.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left py-3 px-4 text-white/60 font-semibold">Affiliate Code</th>
-                  <th className="text-left py-3 px-4 text-white/60 font-semibold">Status</th>
-                  <th className="text-right py-3 px-4 text-white/60 font-semibold">Referrals</th>
-                  <th className="text-right py-3 px-4 text-white/60 font-semibold">Total Earnings</th>
-                  <th className="text-right py-3 px-4 text-white/60 font-semibold">Available</th>
-                  <th className="text-left py-3 px-4 text-white/60 font-semibold">Joined</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredAffiliates.map((affiliate) => (
-                  <tr key={affiliate.id} className="border-b border-white/5 hover:bg-white/5">
-                    <td className="py-3 px-4 font-mono text-sm">{affiliate.affiliate_code}</td>
-                    <td className="py-3 px-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        affiliate.status === 'active' ? 'bg-neon-green/20 text-neon-green' : 'bg-red-500/20 text-red-400'
-                      }`}>
-                        {affiliate.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right">{affiliate.total_referrals || 0}</td>
-                    <td className="py-3 px-4 text-right font-semibold text-neon-green">
-                      ${(affiliate.total_earnings || 0).toFixed(2)}
-                    </td>
-                    <td className="py-3 px-4 text-right font-semibold text-electric-blue">
-                      ${(affiliate.available_balance || 0).toFixed(2)}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-white/60">
-                      {new Date(affiliate.created_at).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="text-center py-12 text-white/60">
-            <Users size={64} className="mx-auto mb-4 opacity-30" />
-            <p>No affiliates found</p>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

@@ -326,4 +326,157 @@ router.get('/validate-code/:code', async (req, res) => {
   }
 });
 
+// Admin endpoints
+router.get('/admin/users', async (req, res) => {
+  try {
+    // Get all users from multiple sources
+    const { data: profileUsers, error: profileError } = await supabase
+      .from('user_profile')
+      .select('user_id, email, first_name, last_name, friendly_id, created_at')
+      .order('created_at', { ascending: false });
+
+    if (profileError) throw profileError;
+
+    // Transform data to match frontend expectations
+    const users = (profileUsers || []).map(user => ({
+      id: user.user_id,
+      user_id: user.user_id,
+      email: user.email,
+      full_name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email,
+      friendly_id: user.friendly_id,
+      created_at: user.created_at
+    }));
+
+    res.json({ success: true, data: users });
+  } catch (error) {
+    console.error('Error fetching admin users:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.post('/admin/assign', async (req, res) => {
+  try {
+    const { user_id, affiliate_code, commission_rate, admin_assigned = true } = req.body;
+
+    if (!user_id || !affiliate_code) {
+      return res.status(400).json({ success: false, error: 'User ID and affiliate code are required' });
+    }
+
+    // Check if user already has an affiliate code
+    const { data: existing } = await supabase
+      .from('affiliates')
+      .select('*')
+      .eq('user_id', user_id)
+      .maybeSingle();
+
+    if (existing) {
+      return res.status(400).json({ success: false, error: 'User already has an affiliate account' });
+    }
+
+    // Check if code is already taken
+    const { data: codeTaken } = await supabase
+      .from('affiliates')
+      .select('*')
+      .eq('referral_code', affiliate_code)
+      .maybeSingle();
+
+    if (codeTaken) {
+      return res.status(400).json({ success: false, error: 'Affiliate code is already taken' });
+    }
+
+    // Create affiliate with admin-assigned code
+    const { data: affiliate, error } = await supabase
+      .from('affiliates')
+      .insert({
+        user_id,
+        referral_code: affiliate_code,
+        commission_rate: commission_rate || 10,
+        total_referrals: 0,
+        total_earnings: 0,
+        available_balance: 0,
+        status: 'active'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({ success: true, data: affiliate });
+  } catch (error) {
+    console.error('Error assigning affiliate code:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.post('/admin/send-code', async (req, res) => {
+  try {
+    const { user_id } = req.body;
+
+    if (!user_id) {
+      return res.status(400).json({ success: false, error: 'User ID is required' });
+    }
+
+    // Get affiliate details
+    const { data: affiliate } = await supabase
+      .from('affiliates')
+      .select('*')
+      .eq('user_id', user_id)
+      .single();
+
+    if (!affiliate) {
+      return res.status(404).json({ success: false, error: 'Affiliate not found' });
+    }
+
+    // Get user profile for email
+    const { data: userProfile } = await supabase
+      .from('user_profile')
+      .select('email, first_name, last_name')
+      .eq('user_id', user_id)
+      .single();
+
+    if (!userProfile || !userProfile.email) {
+      return res.status(404).json({ success: false, error: 'User profile or email not found' });
+    }
+
+    // Send email notification
+    const { default: emailService } = await import('../services/emailService.js');
+
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #0066FF, #7B2EFF); padding: 40px 20px; text-align: center; color: white;">
+          <h1>Congratulations! Your Affiliate Account is Ready!</h1>
+        </div>
+        <div style="padding: 40px 20px; background: #f9f9f9;">
+          <h2>Affiliate Details:</h2>
+          <div style="background: white; padding: 20px; border-left: 4px solid #0066FF;">
+            <p><strong>Affiliate Code:</strong> ${affiliate.referral_code}</p>
+            <p><strong>Commission Rate:</strong> ${affiliate.commission_rate}%</p>
+            <p><strong>Status:</strong> Active</p>
+          </div>
+          <p style="margin-top: 20px;">
+            Share your affiliate code with others to earn commissions on their purchases!
+            Your unique affiliate link: <strong>https://fund8r.com?ref=${affiliate.referral_code}</strong>
+          </p>
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="https://fund8r.com/affiliate" style="background: linear-gradient(135deg, #0066FF, #7B2EFF); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+              View Your Affiliate Dashboard
+            </a>
+          </div>
+        </div>
+      </div>
+    `;
+
+    await emailService.sendEmail({
+      to: userProfile.email,
+      subject: 'Your Fund8r Affiliate Code is Ready!',
+      html: emailHtml
+    });
+
+    res.json({ success: true, message: 'Affiliate code notification sent successfully' });
+  } catch (error) {
+    console.error('Error sending affiliate code notification:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;

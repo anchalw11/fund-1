@@ -126,6 +126,30 @@ export const api = {
     return res.json();
   },
 
+  // Admin Affiliate Management
+  async getAdminUsers() {
+    const res = await fetch(`${API_URL}/affiliates/admin/users`);
+    return res.json();
+  },
+
+  async assignAffiliateCode(userId: string, affiliateCode: string, commissionRate: number, adminAssigned: boolean = true) {
+    const res = await fetch(`${API_URL}/affiliates/admin/assign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, affiliate_code: affiliateCode, commission_rate: commissionRate, admin_assigned: adminAssigned })
+    });
+    return res.json();
+  },
+
+  async sendAffiliateNotification(userId: string) {
+    const res = await fetch(`${API_URL}/affiliates/admin/send-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId })
+    });
+    return res.json();
+  },
+
   // Support Tickets
   async createSupportTicket(ticketData: any) {
     const res = await fetch(`${API_URL}/support/tickets`, {

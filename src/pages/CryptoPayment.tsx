@@ -26,6 +26,17 @@ declare global {
   }
 }
 
+// Challenge type mapping used throughout the component
+const typeNameMap: Record<string, string> = {
+  'ELITE_ROYAL': 'elite',
+  'ELITE': 'elite',
+  'CLASSIC_2STEP': 'standard',
+  'RAPID_FIRE': 'rapid',
+  'PAYG_2STEP': 'professional',
+  'AGGRESSIVE_2STEP': 'swing',
+  'SWING_PRO': 'scaling'
+};
+
 export default function CryptoPayment() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -1212,88 +1223,6 @@ export default function CryptoPayment() {
             </div>
           )}
 
-          {finalPrice > 0 && (
-            <div className="mb-6">
-              <h3 className="font-semibold mb-4">Select Cryptocurrency</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {(['ETH', 'SOL'] as const).map((crypto) => (
-                <button
-                  key={crypto}
-                  onClick={() => setSelectedCrypto(crypto)}
-                  className={`p-6 rounded-lg border-2 transition-all ${
-                    selectedCrypto === crypto
-                      ? 'border-blue-500 bg-[#1A233A]'
-                      : 'border-[#2A3B64] bg-[#10122B]/80 hover:border-blue-500/50'
-                  }`}
-                >
-                  <div className="text-2xl font-bold mb-2">{crypto}</div>
-                  <div className="text-sm text-gray-400">
-                    {crypto === 'ETH' ? 'Ethereum' : 'Solana'}
-                  </div>
-                  <div className="text-lg font-semibold mt-2">
-                    ${cryptoPrices[crypto].toLocaleString()}
-                  </div>
-                </button>
-              ))}
-            </div>
-            </div>
-          )}
-
-          {finalPrice > 0 && (
-            <div className="bg-[#0A0C1F]/80 p-6 rounded-lg border border-[#2A3B64] mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold">Send Payment To</h3>
-              <span className="text-xs text-gray-400">{selectedCrypto} Network</span>
-            </div>
-
-            <div className="bg-[#10122B]/80 p-4 rounded-lg mb-4">
-              <p className="text-xs text-gray-400 mb-2">Wallet Address</p>
-              <div className="flex items-center space-x-2">
-                <code className="flex-1 text-sm break-all">{WALLETS[selectedCrypto]}</code>
-                <button
-                  onClick={() => copyToClipboard(WALLETS[selectedCrypto])}
-                  className="p-2 bg-[#1A233A]/50 rounded hover:bg-[#1A233A] transition-all"
-                >
-                  {copied ? (
-                    <Check size={18} className="text-[#66FF66]" />
-                  ) : (
-                    <Copy size={18} />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-r from-[#1A233A] to-[#10122B] p-6 rounded-lg border border-[#2A3B64]">
-              <div className="text-center">
-                <p className="text-sm text-gray-400 mb-2">Amount to Send</p>
-                <p className="text-4xl font-bold mb-1 text-[#A6C8FF]">
-                  {cryptoAmount} {selectedCrypto}
-                </p>
-                <p className="text-xs text-gray-400">≈ ${finalPrice} USD</p>
-              </div>
-            </div>
-            </div>
-          )}
-
-          {finalPrice > 0 && (
-            <div className="mb-6">
-              <label className="block text-sm font-semibold mb-2">
-                Transaction Hash
-              </label>
-              <input
-                type="text"
-              value={transactionHash}
-              onChange={(e) => setTransactionHash(e.target.value)}
-              placeholder="Paste your transaction hash here"
-              className="w-full px-4 py-3 bg-[#0A0C1F]/80 border border-[#2A3B64] rounded-lg focus:border-[#A6C8FF] focus:outline-none"
-              disabled={verifying}
-            />
-            <p className="text-xs text-gray-500 mt-2">
-              After sending the payment, paste the transaction hash here to verify
-            </p>
-            </div>
-          )}
-
           {verificationStatus === 'failed' && finalPrice > 0 && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6 flex items-start">
               <AlertCircle className="text-red-400 mr-3 flex-shrink-0" size={20} />
@@ -1533,32 +1462,289 @@ export default function CryptoPayment() {
             </div>
           )}
 
-          <button
-            onClick={paymentMethod === 'razorpay' ? handleRazorpayPayment : verifyPayment}
-            disabled={(finalPrice > 0 && paymentMethod === 'crypto' && !transactionHash.trim()) || verifying || verificationStatus === 'success'}
-            className={`w-full py-4 text-lg font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-300 ${
-              paymentMethod === 'razorpay'
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 shadow-lg shadow-purple-500/25'
-                : 'bg-blue-600 hover:bg-blue-500'
-            }`}
-          >
-            {verifying ? (
-              <>
-                <Loader className="animate-spin mr-2" size={20} />
-                {paymentMethod === 'razorpay' ? 'Processing Payment...' : 'Verifying Payment...'}
-              </>
-            ) : verificationStatus === 'success' ? (
-              <>
-                <CheckCircle2 className="mr-2" size={20} />
-                Payment Successful
-              </>
-            ) : (
-              <>
-                {paymentMethod === 'razorpay' ? <CreditCard className="mr-2" size={20} /> : <Coins className="mr-2" size={20} />}
-                Pay ${finalPrice.toFixed(2)} {paymentMethod === 'razorpay' ? 'with Razorpay' : 'with Crypto'}
-              </>
-            )}
-          </button>
+          {finalPrice === 0 && appliedCoupon ? (
+            <button
+              onClick={() => {
+                // For free access, directly create the challenge without payment processing
+                if (!supabase) {
+                  alert('Database connection not available');
+                  return;
+                }
+
+                setVerifying(true);
+
+                (async () => {
+                  try {
+                    // Create user profile check/generation first
+                    console.log('User profile should be automatically created by database trigger');
+
+                    const paymentNotes = `Account: $${accountSize?.toLocaleString()}, Challenge: ${challengeType}, Coupon: ${couponCode.toUpperCase()} (100% off), Free Access`;
+
+                    const { data: payment, error } = await supabase
+                      .from('payments')
+                      .insert({
+                        user_id: user.id,
+                        amount: 0,
+                        currency: 'USD',
+                        payment_method: 'coupon',
+                        transaction_id: 'FREE_' + Date.now(),
+                        status: 'completed',
+                        completed_at: new Date().toISOString(),
+                        notes: paymentNotes
+                      })
+                      .select()
+                      .maybeSingle();
+
+                    if (error) throw error;
+
+                    // Apply coupon usage if exists
+                    if (appliedCoupon) {
+                      await fetch(`${API_URL}/challenges/coupons/increment-usage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          coupon_code: couponCode.toUpperCase()
+                        })
+                      });
+                    }
+
+                    // Track referral commission for free access
+                    if (appliedReferral && referralCode) {
+                      try {
+                        await fetch(`${API_URL}/affiliates/record-purchase`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            referral_code: referralCode.toUpperCase(),
+                            user_id: user.id,
+                            purchase_amount: 0
+                          })
+                        });
+                        console.log('Referral commission tracked for code:', referralCode);
+                      } catch (refError) {
+                        console.error('Failed to track referral:', refError);
+                      }
+                    }
+
+                    // Validate challengeType before proceeding
+                    if (!challengeType) {
+                      console.error('Challenge type is missing!');
+                      alert('Error: Challenge type is missing. Please go back and select a challenge again.');
+                      setVerifying(false);
+                      return;
+                    }
+
+                    // Get challenge type details
+                    const { data: allChallengeTypes } = await db.queryAll('challenge_types');
+                    let challengeTypeData = allChallengeTypes.find((c: any) => c.challenge_code === challengeType);
+
+                    if (!challengeTypeData && challengeType === 'COMPETITION') {
+                      challengeTypeData = {
+                        id: 'competition-fallback-id',
+                        type_name: 'competition',
+                        challenge_code: 'COMPETITION',
+                        challenge_name: 'Trading Competition',
+                        display_name: 'Trading Competition'
+                      };
+                    }
+
+                    if (!challengeTypeData) {
+                      alert('Challenge type not found. Please contact support.');
+                      setVerifying(false);
+                      return;
+                    }
+
+                    const challengeTypeText = challengeTypeData.type_name ||
+                                              typeNameMap[challengeType] ||
+                                              challengeType.toLowerCase();
+
+                    const accountStatus = challengeType === 'COMPETITION' ? 'pending_credentials' : 'active';
+                    const finalAccountSize = challengeType === 'COMPETITION' ? 100000 : accountSize;
+
+                    const challengeInsertData: any = {
+                      user_id: user.id,
+                      challenge_type: challengeTypeText,
+                      challenge_type_id: challengeTypeData.id,
+                      account_size: finalAccountSize,
+                      amount_paid: 0,
+                      payment_id: payment?.id,
+                      discount_applied: true,
+                      status: accountStatus,
+                      current_phase: null,
+                      phase_2_paid: false
+                    };
+
+                    console.log('Free challenge insert data:', challengeInsertData);
+
+                    const insertResult = await supabase
+                      .from('user_challenges')
+                      .insert(challengeInsertData)
+                      .select()
+                      .single();
+
+                    if (insertResult.error) {
+                      console.error('Failed to create free challenge:', insertResult.error);
+                      alert('Error creating challenge. Please contact support.');
+                      setVerifying(false);
+                      return;
+                    }
+
+                    const userChallenge = insertResult.data;
+
+                    // Handle competition accounts
+                    if (challengeType === 'COMPETITION') {
+                      await supabase
+                        .from('user_challenges')
+                        .update({
+                          credentials_sent: false
+                        })
+                        .eq('id', userChallenge.id);
+                    }
+
+                    // Create mini_challenge record if this is a MINI_FREE challenge
+                    if (challengeType === 'MINI_FREE') {
+                      try {
+                        const { error: miniChallengeError } = await supabase
+                          .from('mini_challenges')
+                          .insert({
+                            user_id: user.id,
+                            email: user.email,
+                            account_size: accountSize,
+                            duration_days: 7,
+                            profit_target: accountSize * 0.08,
+                            daily_loss_limit: accountSize * 0.05,
+                            status: 'active',
+                            current_balance: accountSize,
+                            started_at: new Date().toISOString()
+                          });
+
+                        if (miniChallengeError) {
+                          console.error('Failed to create mini_challenge record:', miniChallengeError);
+                          if (miniChallengeError.code === '23505' ||
+                              miniChallengeError.message?.includes('mini_challenges_email_unique_idx') ||
+                              miniChallengeError.message?.includes('duplicate key')) {
+                            console.warn('Duplicate mini-challenge detected - email already used');
+                          }
+                        }
+                      } catch (miniError) {
+                        console.error('Mini challenge creation error:', miniError);
+                      }
+                    }
+
+                    // Generate documents
+                    await supabase
+                      .from('downloads')
+                      .insert({
+                        user_id: user.id,
+                        challenge_id: userChallenge.id,
+                        document_type: 'WELCOME_CERTIFICATE',
+                        title: 'Welcome Certificate',
+                        description: `Welcome to your ${challengeType} challenge!`,
+                        document_number: `WELCOME-${Date.now()}`,
+                        issue_date: new Date().toISOString(),
+                        status: 'ready'
+                      });
+
+                    await supabase
+                      .from('downloads')
+                      .insert({
+                        user_id: user.id,
+                        challenge_id: userChallenge.id,
+                        document_type: 'INVOICE',
+                        title: 'Purchase Invoice',
+                        description: `Invoice for ${challengeType} challenge purchase`,
+                        document_number: `INV-${Date.now()}`,
+                        issue_date: new Date().toISOString(),
+                        status: 'ready'
+                      });
+
+                    await supabase
+                      .from('downloads')
+                      .insert({
+                        user_id: user.id,
+                        challenge_id: userChallenge.id,
+                        document_type: 'PAYOUT_RECEIPT',
+                        title: 'Payment Receipt',
+                        description: `Payment receipt for ${challengeType} challenge`,
+                        document_number: `RCPT-${Date.now()}`,
+                        issue_date: new Date().toISOString(),
+                        status: 'ready'
+                      });
+
+                    // Twitter tracking
+                    if (window.twq) {
+                      window.twq('event', 'tw-qq6v0-qq6v1', {
+                        currency: 'USD',
+                        conversion_id: payment?.id,
+                        email_address: user.email,
+                        phone_number: null
+                      });
+                    }
+
+                    setVerificationStatus('success');
+                    setTimeout(() => {
+                      navigate('/dashboard', {
+                        state: {
+                          showWelcome: true,
+                          accountSize,
+                          challengeType,
+                          paymentId: payment.id,
+                          hasAddOn: false
+                        }
+                      });
+                    }, 2000);
+
+                  } catch (error) {
+                    console.error('Free access processing error:', error);
+                    alert('Error processing free access. Please contact support.');
+                  } finally {
+                    setVerifying(false);
+                  }
+                })();
+              }}
+              disabled={verifying}
+              className="w-full py-4 text-lg font-semibold rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 shadow-lg shadow-green-500/25 transition-all duration-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {verifying ? (
+                <>
+                  <Loader className="animate-spin mr-2" size={20} />
+                  Processing Free Access...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="mr-2" size={20} />
+                  Continue to Dashboard
+                </>
+              )}
+            </button>
+          ) : (
+            <button
+              onClick={paymentMethod === 'razorpay' ? handleRazorpayPayment : verifyPayment}
+              disabled={(finalPrice > 0 && paymentMethod === 'crypto' && !transactionHash.trim()) || verifying || verificationStatus === 'success'}
+              className={`w-full py-4 text-lg font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-300 ${
+                paymentMethod === 'razorpay'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 shadow-lg shadow-purple-500/25'
+                  : 'bg-blue-600 hover:bg-blue-500'
+              }`}
+            >
+              {verifying ? (
+                <>
+                  <Loader className="animate-spin mr-2" size={20} />
+                  {paymentMethod === 'razorpay' ? 'Processing Payment...' : 'Verifying Payment...'}
+                </>
+              ) : verificationStatus === 'success' ? (
+                <>
+                  <CheckCircle2 className="mr-2" size={20} />
+                  Payment Successful
+                </>
+              ) : (
+                <>
+                  {paymentMethod === 'razorpay' ? <CreditCard className="mr-2" size={20} /> : <Coins className="mr-2" size={20} />}
+                  Pay ${finalPrice.toFixed(2)} {paymentMethod === 'razorpay' ? 'with Razorpay' : 'with Crypto'}
+                </>
+              )}
+            </button>
+          )}
 
           <div className="mt-4 flex items-center justify-center space-x-4 text-sm text-gray-400">
             <a
