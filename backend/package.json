@@ -5,7 +5,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node --env-file=../.env server.js",
+    "start": "node server.js",
     "dev": "nodemon --env-file=../.env server.js",
     "test": "node test-connection.js",
     "test:email": "node SendTestEmail.js"
