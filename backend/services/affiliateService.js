@@ -166,7 +166,7 @@ class AffiliateService {
         };
       }
 
-      console.log('Found affiliate:', affiliate.id, affiliate.referral_code);
+      console.log('Found affiliate:', affiliate.id, affiliate.affiliate_code || affiliate.referral_code);
 
       try {
         // Try to get referrals
@@ -177,26 +177,26 @@ class AffiliateService {
             .select('*, users:referred_user_id(email, full_name)')
             .eq('affiliate_id', affiliate.id);
 
-          if (!refError && referrals) {
+          if (!refError && referrals && Array.isArray(referrals)) {
             referralsArray = referrals;
           }
         } catch (e) {
-          // ignore
+          console.log('Referrals table error, continuing with empty array');
         }
 
         try {
-          if (referralsArray.length === 0) {
+          if (!referralsArray || referralsArray.length === 0) {
             const { data: affiliateReferrals, error: affRefError } = await supabase
               .from('affiliate_referrals')
               .select('*')
               .eq('affiliate_id', affiliate.id);
 
-            if (!affRefError && affiliateReferrals) {
+            if (!affRefError && affiliateReferrals && Array.isArray(affiliateReferrals)) {
               referralsArray = affiliateReferrals;
             }
           }
         } catch (e) {
-          // ignore
+          console.log('Affiliate referrals table error, continuing with empty array');
         }
 
         referralsArray = Array.isArray(referralsArray) ? referralsArray : [];
@@ -208,11 +208,11 @@ class AffiliateService {
             .select('*')
             .eq('affiliate_id', affiliate.id);
 
-          if (!commError && commissions) {
+          if (!commError && commissions && Array.isArray(commissions)) {
             commissionsArray = commissions;
           }
         } catch (e) {
-          // ignore
+          console.log('Commissions table error, continuing with empty array');
         }
 
         commissionsArray = Array.isArray(commissionsArray) ? commissionsArray : [];
@@ -228,7 +228,7 @@ class AffiliateService {
         const activeReferralsCount = referralsArray.filter(r => r && (r.status === 'completed' || r.status === 'approved')).length;
 
         return {
-          affiliate_code: affiliate.referral_code || '',
+          affiliate_code: affiliate.affiliate_code || affiliate.referral_code || '',
           total_referrals: referralsArray.length,
           active_referrals: activeReferralsCount,
           total_earnings: affiliate.total_earnings || 0,
