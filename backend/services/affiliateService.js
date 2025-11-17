@@ -133,15 +133,27 @@ class AffiliateService {
     }
   }
 
-  async getAffiliateStats(userId) {
+  async getAffiliateStats(identifier) {
     try {
-      const { data: affiliate, error } = await supabase
+      // Try to find affiliate by user_id first
+      let { data: affiliate, error } = await supabase
         .from('affiliates')
         .select('*')
-        .eq('user_id', userId)
-        .single();
+        .eq('user_id', identifier)
+        .maybeSingle();
 
-      if (error || !affiliate) {
+      // If not found, try by affiliate id (for admin/support access)
+      if (!affiliate) {
+        const { data: affiliateById, error: idError } = await supabase
+          .from('affiliates')
+          .select('*')
+          .eq('id', identifier)
+          .maybeSingle();
+
+        affiliate = affiliateById;
+      }
+
+      if (!affiliate) {
         console.log('No affiliate found, returning safe defaults');
         return {
           affiliate_code: '',
