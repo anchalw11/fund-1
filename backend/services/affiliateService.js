@@ -89,12 +89,14 @@ class AffiliateService {
 
       if (!referral) return;
 
-      const { data: referrals } = await supabase
+      const { data: referrals, error: referralsError } = await supabase
         .from('referrals')
         .select('id')
         .eq('affiliate_id', referral.affiliate_id);
 
-      const commissionRate = referrals.length >= 50 ? 20 : 10;
+      // Safely handle referrals array
+      const referralsCount = (referrals && Array.isArray(referrals)) ? referrals.length : 0;
+      const commissionRate = referralsCount >= 50 ? 20 : 10;
       const commissionAmount = payment.amount * (commissionRate / 100);
 
       await supabase.from('commissions').insert({
@@ -169,7 +171,7 @@ class AffiliateService {
       console.log('Found affiliate:', affiliate.id, affiliate.affiliate_code || affiliate.referral_code);
 
       try {
-        // Try to get referrals
+        // Get referrals - handle null data safely
         let referralsArray = [];
         try {
           const { data: referrals, error: refError } = await supabase
@@ -177,30 +179,33 @@ class AffiliateService {
             .select('*, users:referred_user_id(email, full_name)')
             .eq('affiliate_id', affiliate.id);
 
-          if (!refError && referrals && Array.isArray(referrals)) {
-            referralsArray = referrals;
+          if (!refError && Array.isArray(referrals)) {
+            referralsArray = referrals || [];
           }
         } catch (e) {
-          console.log('Referrals table error, continuing with empty array');
+          console.log('Referrals table error, using empty array');
+          referralsArray = [];
         }
 
         try {
-          if (!referralsArray || referralsArray.length === 0) {
+          if (referralsArray.length === 0) {
             const { data: affiliateReferrals, error: affRefError } = await supabase
               .from('affiliate_referrals')
               .select('*')
               .eq('affiliate_id', affiliate.id);
 
-            if (!affRefError && affiliateReferrals && Array.isArray(affiliateReferrals)) {
-              referralsArray = affiliateReferrals;
+            if (!affRefError && Array.isArray(affiliateReferrals)) {
+              referralsArray = affiliateReferrals || [];
             }
           }
         } catch (e) {
-          console.log('Affiliate referrals table error, continuing with empty array');
+          console.log('Affiliate referrals table error, staying with empty array');
         }
 
+        // Ensure referralsArray is always an array
         referralsArray = Array.isArray(referralsArray) ? referralsArray : [];
 
+        // Get commissions - handle null data safely
         let commissionsArray = [];
         try {
           const { data: commissions, error: commError } = await supabase
@@ -208,24 +213,29 @@ class AffiliateService {
             .select('*')
             .eq('affiliate_id', affiliate.id);
 
-          if (!commError && commissions && Array.isArray(commissions)) {
-            commissionsArray = commissions;
+          if (!commError && Array.isArray(commissions)) {
+            commissionsArray = commissions || [];
           }
         } catch (e) {
-          console.log('Commissions table error, continuing with empty array');
+          console.log('Commissions table error, using empty array');
+          commissionsArray = [];
         }
 
+        // Ensure commissionsArray is always an array
         commissionsArray = Array.isArray(commissionsArray) ? commissionsArray : [];
 
-        const pendingEarnings = commissionsArray
+        // Calculate earnings safely
+        const pendingEarnings = (commissionsArray || [])
           .filter(c => c && c.status === 'pending')
-          .reduce((sum, c) => sum + (c.amount || 0), 0);
+          .reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
 
-        const paidEarnings = commissionsArray
+        const paidEarnings = (commissionsArray || [])
           .filter(c => c && c.status === 'paid')
-          .reduce((sum, c) => sum + (c.amount || 0), 0);
+          .reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
 
-        const activeReferralsCount = referralsArray.filter(r => r && (r.status === 'completed' || r.status === 'approved')).length;
+        // Count active referrals safely
+        const activeReferralsCount = (referralsArray || [])
+          .filter(r => r && (r.status === 'completed' || r.status === 'approved')).length;
 
         return {
           affiliate_code: affiliate.affiliate_code || affiliate.referral_code || '',
