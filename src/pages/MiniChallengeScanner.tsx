@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
 import { supabase } from '../lib/db';
-import { QrCode, Zap, Shield, Trophy, Clock, DollarSign, Star, ArrowRight, Sparkles } from 'lucide-react';
+import { QrCode, Zap, Shield, Trophy, Clock, DollarSign, Star, ArrowRight, Sparkles, Instagram, Twitter, Youtube, MessageCircle, Check, ExternalLink } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +12,8 @@ export default function MiniChallengeScanner() {
   const [user, setUser] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [challengeCreated, setChallengeCreated] = useState(false);
+  const [limitReached, setLimitReached] = useState(false);
+  const [accessChecked, setAccessChecked] = useState(false);
   const qrRef = useRef<HTMLCanvasElement>(null);
   const navigate = useNavigate();
 
@@ -132,50 +134,21 @@ export default function MiniChallengeScanner() {
           </h1>
 
           <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            scan the qr code below to unlock your $0.99 mini-challenge experience
+            your $0.99 mini-challenge experience details and rules
           </p>
 
           <div className="flex items-center justify-center mt-6 mb-4">
-            <div className="bg-gradient-to-r from-orange-500 to-yellow-500 text-black px-8 py-3 rounded-full font-bold text-xl flex items-center">
+            <button
+              onClick={handlePurchase}
+              className="bg-gradient-to-r from-orange-500 to-yellow-500 text-black px-8 py-3 rounded-full font-bold text-xl flex items-center hover:scale-105 transition-transform cursor-pointer"
+            >
               <DollarSign className="w-6 h-6 mr-2" />
               $0.99 MINI CHALLENGE
-            </div>
+            </button>
           </div>
         </div>
 
-        {/* QR Code Section */}
-        <div className="text-center mb-16">
-          <div className="inline-block relative">
-            <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-2xl blur-lg opacity-75 animate-pulse"></div>
-            <div className="relative bg-black/80 backdrop-blur-xl p-8 rounded-2xl border border-cyan-500/30">
-              <div className="flex items-center justify-center mb-6">
-                <QrCode className="w-8 h-8 text-cyan-400 mr-2" />
-                <span className="text-cyan-400 font-semibold text-lg">SCAN TO START</span>
-              </div>
 
-              {isLoading ? (
-                <div className="w-80 h-80 mx-auto flex items-center justify-center bg-gray-800/50 rounded-xl">
-                  <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-cyan-500/20 border-t-cyan-400"></div>
-                </div>
-              ) : (
-                <div className="relative">
-                  <img
-                    src={qrCodeUrl}
-                    alt="Mini Challenge QR Code"
-                    className="w-80 h-80 mx-auto rounded-xl border-2 border-cyan-500/50"
-                  />
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-cyan-500 rounded-full animate-pulse"></div>
-                  <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-purple-500 rounded-full animate-pulse delay-500"></div>
-                </div>
-              )}
-
-              <div className="mt-6 space-y-2 text-gray-300 text-sm">
-                <p className="font-semibold text-cyan-400">Mobile Optimized</p>
-                <p>Scan with any QR code reader app</p>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Challenge Details */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">

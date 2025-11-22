@@ -27,6 +27,8 @@ import SystemTest from './pages/SystemTest';
 import EmailVerification from './pages/EmailVerification';
 import MiniChallenge from './pages/MiniChallenge';
 import MiniChallengeScanner from './pages/MiniChallengeScanner';
+import MiniChallengeEntryScanner from './pages/MiniChallengeEntryScanner';
+import SocialFollowRequirement from './pages/SocialFollowRequirement';
 import Badges from './pages/Badges';
 import Subscriptions from './pages/Subscriptions';
 import SecondChance from './pages/SecondChance';
@@ -72,6 +74,8 @@ function App() {
 
         <Route path="/email-verification" element={<EmailVerification />} />
         <Route path="/mini-challenge" element={<MiniChallenge />} />
+        <Route path="/mini-challenge/entry" element={<MiniChallengeEntryScanner />} />
+        <Route path="/mini-challenge/follow" element={<SocialFollowRequirement />} />
         <Route path="/mini-challenge/start" element={<MiniChallengeScanner />} />
         <Route path="/badges" element={<Badges />} />
         <Route path="/subscriptions" element={<Subscriptions />} />

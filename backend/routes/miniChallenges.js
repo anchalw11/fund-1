@@ -67,7 +67,8 @@ router.post('/create', async (req, res) => {
   }
 });
 
-// Get user's mini challenges
+}
+
 router.get('/user/:user_id', async (req, res) => {
   try {
     const { user_id } = req.params;
@@ -114,4 +115,107 @@ router.post('/complete', async (req, res) => {
   }
 });
 
-export default router;
+}
+
+// Check mini-challenge access limit
+router.get('/check-access-limit', async (req, res) => {
+  try {
+    const { db } = await import('../config/database.js');
+
+    // Get current limit info
+    const limitInfo = await db.querySingle('SELECT * FROM mini_challenge_limits WHERE id = ?', ['global_limit']);
+
+    if (!limitInfo) {
+      return res.json({
+        success: true,
+        access_granted: false,
+        current_count: 0,
+        max_limit: 100,
+        message: 'System not initialized'
+      });
+    }
+
+    // Check if under limit
+    const accessGranted = limitInfo.total_access_count < limitInfo.max_limit;
+
+    res.json({
+      success: true,
+      access_granted: accessGranted,
+      current_count: limitInfo.total_access_count,
+      max_limit: limitInfo.max_limit,
+      message: accessGranted
+        ? 'Access available'
+        : `Access limit reached (${limitInfo.total_access_count}/100 users maximum)`
+    });
+
+  } catch (error) {
+    console.error('Error checking access limit:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Record mini-challenge access (increment counter)
+router.post('/record-access', async (req, res) => {
+  try {
+    const { db } = await import('../config/database.js');
+    const { user_id, user_email, user_ip } = req.body;
+
+    // Get current limit info
+    const limitInfo = await db.querySingle('SELECT * FROM mini_challenge_limits WHERE id = ?', ['global_limit']);
+
+    if (!limitInfo) {
+      return res.status(400).json({
+        success: false,
+        error: 'System not initialized'
+      });
+    }
+
+    // Check if still under limit
+    if (limitInfo.total_access_count >= limitInfo.max_limit) {
+      // Log denied access
+      await db.run(
+        `INSERT INTO mini_challenge_access_logs (id, user_id, user_email, user_ip, granted)
+         VALUES (?, ?, ?, ?, ?)`,
+        [crypto.randomUUID(), user_id, user_email, user_ip, 0]
+      );
+
+      return res.json({
+        success: false,
+        access_granted: false,
+        current_count: limitInfo.total_access_count,
+        max_limit: limitInfo.max_limit,
+        message: 'Access limit reached (100 users maximum)'
+      });
+    }
+
+    // Increment counter and log access
+    const newCount = limitInfo.total_access_count + 1;
+
+    // Update counter
+    await db.run(
+      `UPDATE mini_challenge_limits
+       SET total_access_count = ?, last_updated = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [newCount, 'global_limit']
+    );
+
+    // Log granted access
+    await db.run(
+      `INSERT INTO mini_challenge_access_logs (id, user_id, user_email, user_ip, granted)
+       VALUES (?, ?, ?, ?, ?)`,
+      [crypto.randomUUID(), user_id, user_email, user_ip, 1]
+    );
+
+    res.json({
+      success: true,
+      access_granted: true,
+      current_count: newCount,
+      max_limit: limitInfo.max_limit,
+      message: 'Access granted'
+    });
+
+  } catch (error) {
+    console.error('Error recording access:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
