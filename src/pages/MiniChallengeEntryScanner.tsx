@@ -19,7 +19,7 @@ export default function MiniChallengeEntryScanner() {
     // Auto-redirect after showing the scanner
     const timer = setTimeout(() => {
       navigate('/mini-challenge/follow');
-    }, 5000); // 5 second delay to show scanner
+    }, 60000); // 60 second delay to show scanner
 
     return () => clearTimeout(timer);
   }, [navigate]);
@@ -75,7 +75,7 @@ export default function MiniChallengeEntryScanner() {
 
           <div className="inline-block bg-gray-800/50 backdrop-blur-xl rounded-xl p-4 border border-cyan-500/30">
             <p className="text-cyan-400 font-semibold animate-pulse">
-              Redirecting to community page in 5 seconds...
+              Redirecting to community page in 60 seconds...
             </p>
           </div>
         </div>
