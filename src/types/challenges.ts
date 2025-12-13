@@ -188,33 +188,6 @@ export const ACCOUNT_SIZES: AccountSize[] = [
       'Dedicated account manager'
     ]
   },
-  {
-    size: 200000,
-    pricing: {
-      standard: 599,
-      rapid: 1199,
-      scaling: 449,
-      professional: 2199,
-      swing: 2499,
-      master: 1499
-    },
-    profitSplit: {
-      standard: 90,
-      rapid: 90,
-      scaling: 95,
-      professional: 95,
-      swing: 90,
-      master: 95
-    },
-    maxLotSize: 20.0,
-    features: [
-      'Maximum capital',
-      '90-95% profit split',
-      'Weekly payouts',
-      'Executive support',
-      'Private Telegram group'
-    ]
-  }
 ];
 
 export interface ChallengeType {
@@ -270,7 +243,7 @@ export const CHALLENGE_TYPES: ChallengeType[] = [
     timeLimit: null,
 
     consistencyScoreRequired: 7.5,
-    consistencyRule: '40% Rule: No single winning day can contribute more than 40% of your total profit. This ensures consistent trading performance rather than relying on lucky days.',
+    consistencyRule: '40% Consistency Rule: No single winning day can contribute more than 40% of your total profit. Formula: (Biggest End-of-Day Profit) ÷ (Total Profits) ≤ 40%. This ensures consistent trading performance rather than relying on lucky days.',
     payoutInfo: 'Payouts processed 14 days after your first trade',
     minSharpeRatio: 1.2,
     minProfitFactor: 1.5,
@@ -310,7 +283,7 @@ export const CHALLENGE_TYPES: ChallengeType[] = [
     timeLimit: 10,
 
     consistencyScoreRequired: 8.0,
-    consistencyRule: '40% Rule: No single winning day can contribute more than 40% of your total profit. This ensures consistent trading performance rather than relying on lucky days.',
+    consistencyRule: '40% Consistency Rule: No single winning day can contribute more than 40% of your total profit. Formula: (Biggest End-of-Day Profit) ÷ (Total Profits) ≤ 40%. This ensures consistent trading performance rather than relying on lucky days.',
     payoutInfo: 'First payout: On-demand | Subsequent payouts: Every 14 days',
     minSharpeRatio: 1.5,
     minProfitFactor: 2.0,
@@ -350,7 +323,7 @@ export const CHALLENGE_TYPES: ChallengeType[] = [
     timeLimit: null,
 
     consistencyScoreRequired: 8.0,
-    consistencyRule: '40% Rule: No single winning day can contribute more than 40% of your total profit. This ensures consistent trading performance rather than relying on lucky days.',
+    consistencyRule: '40% Consistency Rule: No single winning day can contribute more than 40% of your total profit. Formula: (Biggest End-of-Day Profit) ÷ (Total Profits) ≤ 40%. This ensures consistent trading performance rather than relying on lucky days.',
     payoutInfo: 'Flexible payout schedule with highest profit splits',
     minSharpeRatio: 1.4,
     minProfitFactor: 1.8,
@@ -390,7 +363,7 @@ export const CHALLENGE_TYPES: ChallengeType[] = [
     timeLimit: null,
 
     consistencyScoreRequired: 7.5,
-    consistencyRule: '40% Rule: No single winning day can contribute more than 40% of your total profit. This ensures consistent trading performance rather than relying on lucky days.',
+    consistencyRule: '40% Consistency Rule: No single winning day can contribute more than 40% of your total profit. Formula: (Biggest End-of-Day Profit) ÷ (Total Profits) ≤ 40%. This ensures consistent trading performance rather than relying on lucky days.',
     payoutInfo: 'ONE-TIME PAYOUT ONLY: You can request one single payout to receive all accumulated profits. No recurring payouts available with this challenge type.',
     minSharpeRatio: 1.3,
     minProfitFactor: 1.8,
@@ -512,7 +485,7 @@ export const CHALLENGE_TYPES: ChallengeType[] = [
     timeLimit: null,
 
     consistencyScoreRequired: 8.0,
-    consistencyRule: '40% Rule: No single winning day can contribute more than 40% of your total profit. This ensures consistent trading performance rather than relying on lucky days.',
+    consistencyRule: '40% Consistency Rule: No single winning day can contribute more than 40% of your total profit. Formula: (Biggest End-of-Day Profit) ÷ (Total Profits) ≤ 40%. This ensures consistent trading performance rather than relying on lucky days.',
     payoutInfo: 'Premium payout terms available upon launch',
     minSharpeRatio: 1.5,
     minProfitFactor: 2.0,

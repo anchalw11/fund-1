@@ -92,10 +92,20 @@ export default function ChallengeTypes() {
         // Use fallback data on error
         setChallenges(getFallbackChallenges());
       } else if (challengeData && challengeData.length > 0) {
-        // Filter out SCALING and REGULAR challenges
+        // Filter out SCALING, REGULAR, and show ELITE_ROYAL as coming soon
         const filteredChallenges = challengeData.filter(
           challenge => challenge.challenge_code !== 'SCALING' && challenge.challenge_code !== 'REGULAR'
-        );
+        ).map(challenge => {
+          if (challenge.challenge_code === 'ELITE_ROYAL') {
+            return {
+              ...challenge,
+              challenge_name: challenge.challenge_name + ' - COMING SOON',
+              description: '🔒 COMING SOON - Premium institutional challenge with exclusive features',
+              is_active: false
+            };
+          }
+          return challenge;
+        });
         setChallenges(filteredChallenges);
       } else {
         // Use fallback data if no data returned
@@ -111,9 +121,9 @@ export default function ChallengeTypes() {
   };
 
   const getFallbackPricingTiers = (challengeCode: string): any[] => {
-    const accountSizes = challengeCode === 'ELITE_ROYAL' 
+    const accountSizes = challengeCode === 'ELITE_ROYAL'
       ? [300000, 500000, 1000000, 2000000]
-      : [5000, 10000, 25000, 50000, 100000, 200000];
+      : [5000, 10000, 25000, 50000, 100000];
     
     return accountSizes.map(size => ({
       id: `fallback-${size}`,
@@ -180,9 +190,9 @@ export default function ChallengeTypes() {
     {
       id: '6',
       challenge_code: 'ELITE_ROYAL',
-      challenge_name: 'Elite Royal',
-      description: 'Premium challenge with best profit split and conditions',
-      is_active: true,
+      challenge_name: 'Elite Royal - COMING SOON',
+      description: '🔒 COMING SOON - Premium institutional challenge with exclusive features',
+      is_active: false,
       recommended: false
     },
     {
@@ -273,40 +283,35 @@ export default function ChallengeTypes() {
             10000: 79,
             25000: 129,
             50000: 125,
-            100000: 225,
-            200000: 599
+            100000: 225
           },
           'RAPID_FIRE': {
             5000: 99,
             10000: 149,
             25000: 249,
             50000: 83,
-            100000: 149,
-            200000: 1199
+            100000: 149
           },
           'PAYG_2STEP': {
             5000: { phase1: 10, phase2: 8 },
             10000: { phase1: 25, phase2: 10 },
             25000: { phase1: 499, phase2: 250 },
             50000: { phase1: 80, phase2: 40 },
-            100000: { phase1: 150, phase2: 100 },
-            200000: { phase1: 2199, phase2: 1200 }
+            100000: { phase1: 150, phase2: 100 }
           },
           'AGGRESSIVE_2STEP': {
             5000: 30,
             10000: 55,
             25000: 85,
             50000: 155,
-            100000: 315,
-            200000: 2499
+            100000: 315
           },
           'SWING_PRO': {
             5000: 18,
             10000: 36,
             25000: 86,
             50000: 169,
-            100000: 338,
-            200000: 676
+            100000: 338
           },
           'ELITE_ROYAL': {
             300000: 0,
@@ -562,19 +567,19 @@ export default function ChallengeTypes() {
                   <tr className="border-b border-white/5 hover:bg-white/5 transition-colors">
                     <td className="py-4 px-4 font-semibold">Starting Price</td>
                     <td className="text-center py-4 px-4">
-                      <span className="text-green-400 font-bold">$14</span>
+                      <span className="text-green-400 font-bold">$99</span>
                       <div className="text-xs text-gray-500">(5k account)</div>
                     </td>
                     <td className="text-center py-4 px-4">
-                      <span className="text-green-400 font-bold">$19</span>
+                      <span className="text-green-400 font-bold">$20</span>
                       <div className="text-xs text-gray-500">(5k account)</div>
                     </td>
                     <td className="text-center py-4 px-4">
-                      <span className="text-green-400 font-bold">$12</span>
+                      <span className="text-green-400 font-bold">$10</span>
                       <div className="text-xs text-gray-500">(Phase 1 only)</div>
                     </td>
                     <td className="text-center py-4 px-4">
-                      <span className="text-green-400 font-bold">$16</span>
+                      <span className="text-green-400 font-bold">$30</span>
                       <div className="text-xs text-gray-500">(5k account)</div>
                     </td>
                     <td className="text-center py-4 px-4">
@@ -582,8 +587,8 @@ export default function ChallengeTypes() {
                       <div className="text-xs text-gray-500">(5k account)</div>
                     </td>
                     <td className="text-center py-4 px-4">
-                      <span className="text-green-400 font-bold">$1699</span>
-                      <div className="text-xs text-gray-500">(300k account)</div>
+                      <span className="text-yellow-400 font-bold">COMING SOON</span>
+                      <div className="text-xs text-gray-500">(Elite level)</div>
                     </td>
                   </tr>
                   <tr className="border-b border-white/5 hover:bg-white/5 transition-colors">
@@ -600,18 +605,22 @@ export default function ChallengeTypes() {
                     <td className="text-center py-4 px-4">10%</td>
                     <td className="text-center py-4 px-4">8% → 5%</td>
                     <td className="text-center py-4 px-4">8% → 5%</td>
-                    <td className="text-center py-4 px-4">12% → 6%</td>
+                    <td className="text-center py-4 px-4">15% → 10%</td>
                     <td className="text-center py-4 px-4">6% → 4%</td>
-                    <td className="text-center py-4 px-4">8%</td>
+                    <td className="text-center py-4 px-4">
+                      <span className="text-yellow-400">COMING SOON</span>
+                    </td>
                   </tr>
                   <tr className="border-b border-white/5 hover:bg-white/5 transition-colors">
                     <td className="py-4 px-4 font-semibold">Max Drawdown</td>
-                    <td className="text-center py-4 px-4">5%</td>
                     <td className="text-center py-4 px-4">6%</td>
                     <td className="text-center py-4 px-4">6%</td>
-                    <td className="text-center py-4 px-4">8%</td>
-                    <td className="text-center py-4 px-4">8%</td>
+                    <td className="text-center py-4 px-4">6%</td>
                     <td className="text-center py-4 px-4">10%</td>
+                    <td className="text-center py-4 px-4">8%</td>
+                    <td className="text-center py-4 px-4">
+                      <span className="text-yellow-400">COMING SOON</span>
+                    </td>
                   </tr>
                   <tr className="border-b border-white/5 hover:bg-white/5 transition-colors">
                     <td className="py-4 px-4 font-semibold">Daily Loss Limit</td>
@@ -620,25 +629,59 @@ export default function ChallengeTypes() {
                     <td className="text-center py-4 px-4">3%</td>
                     <td className="text-center py-4 px-4">5%</td>
                     <td className="text-center py-4 px-4">4%</td>
-                    <td className="text-center py-4 px-4">5%</td>
+                    <td className="text-center py-4 px-4">
+                      <span className="text-yellow-400">COMING SOON</span>
+                    </td>
                   </tr>
                   <tr className="border-b border-white/5 hover:bg-white/5 transition-colors">
                     <td className="py-4 px-4 font-semibold">Time Limit</td>
                     <td className="text-center py-4 px-4">10 Days</td>
                     <td className="text-center py-4 px-4">Unlimited</td>
                     <td className="text-center py-4 px-4">Unlimited</td>
-                    <td className="text-center py-4 px-4">30 Days</td>
+                    <td className="text-center py-4 px-4">
+                      <span className="text-orange-400 font-bold">21 Days</span>
+                    </td>
                     <td className="text-center py-4 px-4">60 Days</td>
-                    <td className="text-center py-4 px-4">Unlimited</td>
+                    <td className="text-center py-4 px-4">
+                      <span className="text-yellow-400">COMING SOON</span>
+                    </td>
                   </tr>
                   <tr className="border-b border-white/5 hover:bg-white/5 transition-colors">
                     <td className="py-4 px-4 font-semibold">Min Trading Days</td>
+                    <td className="text-center py-4 px-4">5 Days</td>
+                    <td className="text-center py-4 px-4">5 Days</td>
+                    <td className="text-center py-4 px-4">5 Days</td>
+                    <td className="text-center py-4 px-4">10 Days</td>
                     <td className="text-center py-4 px-4">3 Days</td>
-                    <td className="text-center py-4 px-4">5 Days</td>
-                    <td className="text-center py-4 px-4">5 Days</td>
-                    <td className="text-center py-4 px-4">4 Days</td>
-                    <td className="text-center py-4 px-4">3 Days</td>
-                    <td className="text-center py-4 px-4">5 Days</td>
+                    <td className="text-center py-4 px-4">
+                      <span className="text-yellow-400">COMING SOON</span>
+                    </td>
+                  </tr>
+                  <tr className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                    <td className="py-4 px-4 font-semibold">Payout Terms</td>
+                    <td className="text-center py-4 px-4 text-sm">
+                      <span className="text-green-400">1st: On-demand</span>
+                      <div className="text-xs text-gray-500">Then 14 days</div>
+                    </td>
+                    <td className="text-center py-4 px-4 text-sm">
+                      <span className="text-blue-400">14 days</span>
+                      <div className="text-xs text-gray-500">After 1st trade</div>
+                    </td>
+                    <td className="text-center py-4 px-4 text-sm">
+                      <span className="text-yellow-400">ONE-TIME</span>
+                      <div className="text-xs text-gray-500">Single payout</div>
+                    </td>
+                    <td className="text-center py-4 px-4 text-sm">
+                      <span className="text-purple-400">Flexible</span>
+                      <div className="text-xs text-gray-500">After passing</div>
+                    </td>
+                    <td className="text-center py-4 px-4 text-sm">
+                      <span className="text-gray-400">Flexible</span>
+                      <div className="text-xs text-gray-500">Standard terms</div>
+                    </td>
+                    <td className="text-center py-4 px-4">
+                      <span className="text-yellow-400">COMING SOON</span>
+                    </td>
                   </tr>
                   <tr className="border-b border-white/5 hover:bg-white/5 transition-colors">
                     <td className="py-4 px-4 font-semibold">Profit Split</td>
@@ -673,28 +716,27 @@ export default function ChallengeTypes() {
                   <tr className="border-b border-white/5 hover:bg-white/5 transition-colors">
                     <td className="py-4 px-4 font-semibold">Consistency Rule</td>
                     <td className="text-center py-4 px-4">
-                      <span className="text-yellow-400">✓ Required</span>
-                      <div className="text-xs text-gray-500">Max 40% per day</div>
+                      <span className="text-yellow-400 font-bold">✓ 40%</span>
+                      <div className="text-xs text-blue-400 font-mono">(Profit/Total) ≤ 40%</div>
                     </td>
                     <td className="text-center py-4 px-4">
-                      <span className="text-yellow-400">✓ Required</span>
-                      <div className="text-xs text-gray-500">Max 40% per day</div>
+                      <span className="text-yellow-400 font-bold">✓ 40%</span>
+                      <div className="text-xs text-blue-400 font-mono">(Profit/Total) ≤ 40%</div>
                     </td>
                     <td className="text-center py-4 px-4">
-                      <span className="text-yellow-400">✓ Required</span>
-                      <div className="text-xs text-gray-500">Max 40% per day</div>
+                      <span className="text-yellow-400 font-bold">✓ 40%</span>
+                      <div className="text-xs text-blue-400 font-mono">(Profit/Total) ≤ 40%</div>
                     </td>
                     <td className="text-center py-4 px-4">
-                      <span className="text-red-400">✗ Not Required</span>
-                      <div className="text-xs text-gray-500">No limit</div>
+                      <span className="text-green-400 font-bold">✗ NONE</span>
+                      <div className="text-xs text-green-500">Trade freely!</div>
                     </td>
                     <td className="text-center py-4 px-4">
-                      <span className="text-yellow-400">✓ Required</span>
-                      <div className="text-xs text-gray-500">Max 40% per day</div>
+                      <span className="text-yellow-400 font-bold">✓ 40%</span>
+                      <div className="text-xs text-blue-400 font-mono">(Profit/Total) ≤ 40%</div>
                     </td>
                     <td className="text-center py-4 px-4">
-                      <span className="text-red-400">✗ Not Required</span>
-                      <div className="text-xs text-gray-500">No limit</div>
+                      <span className="text-yellow-400">COMING SOON</span>
                     </td>
                   </tr>
                   <tr className="border-b border-white/5 hover:bg-white/5 transition-colors">
@@ -708,12 +750,14 @@ export default function ChallengeTypes() {
                   </tr>
                   <tr className="hover:bg-white/5 transition-colors">
                     <td className="py-4 px-4 font-semibold">Best For</td>
-                    <td className="text-center py-4 px-4 text-sm text-gray-400">Quick traders</td>
-                    <td className="text-center py-4 px-4 text-sm text-gray-400">Balanced approach</td>
-                    <td className="text-center py-4 px-4 text-sm text-gray-400">Lower entry cost</td>
-                    <td className="text-center py-4 px-4 text-sm text-gray-400">Risk takers</td>
+                    <td className="text-center py-4 px-4 text-sm text-gray-400">Fast-paced traders</td>
+                    <td className="text-center py-4 px-4 text-sm text-gray-400">Most traders</td>
+                    <td className="text-center py-4 px-4 text-sm text-gray-400">Budget conscious</td>
+                    <td className="text-center py-4 px-4 text-sm text-gray-400">Aggressive style</td>
                     <td className="text-center py-4 px-4 text-sm text-gray-400">Position traders</td>
-                    <td className="text-center py-4 px-4 text-sm text-gray-400">Premium conditions</td>
+                    <td className="text-center py-4 px-4">
+                      <span className="text-yellow-400">COMING SOON</span>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -892,7 +936,9 @@ export default function ChallengeTypes() {
                       <CheckCircle className="text-yellow-400 mt-0.5 flex-shrink-0" size={20} />
                       <div>
                         <span className="font-semibold text-yellow-400">40% Consistency Rule:</span>
-                        <p className="text-sm text-gray-300 mt-1">No single winning day can contribute more than 40% of your total profit. This ensures consistent trading performance rather than relying on lucky days.</p>
+                        <p className="text-sm text-gray-300 mt-1">No single winning day can contribute more than 40% of your total profit.</p>
+                        <p className="text-xs text-blue-400 mt-1 font-mono">Formula: (Biggest End-of-Day Profit) ÷ (Total Profits) ≤ 40%</p>
+                        <p className="text-xs text-gray-400 mt-1">This ensures consistent trading performance rather than relying on lucky days.</p>
                       </div>
                     </li>
                   )}
