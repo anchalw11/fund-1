@@ -269,36 +269,36 @@ export default function ChallengeTypes() {
         // Define pricing for each challenge type
         const pricingByChallenge: { [key: string]: any } = {
           'CLASSIC_2STEP': {
-            5000: 19,
-            10000: 38,
-            25000: 89,
-            50000: 186,
-            100000: 370,
-            200000: 729
+            5000: 20,
+            10000: 79,
+            25000: 129,
+            50000: 125,
+            100000: 225,
+            200000: 599
           },
           'RAPID_FIRE': {
-            5000: 14,
-            10000: 26,
-            25000: 50,
-            50000: 99,
-            100000: 198,
-            200000: 395
+            5000: 99,
+            10000: 149,
+            25000: 249,
+            50000: 83,
+            100000: 149,
+            200000: 1199
           },
           'PAYG_2STEP': {
-            5000: { phase1: 12, phase2: 6 },
-            10000: { phase1: 22, phase2: 13 },
-            25000: { phase1: 56, phase2: 32 },
-            50000: { phase1: 112, phase2: 64 },
-            100000: { phase1: 224, phase2: 128 },
-            200000: { phase1: 448, phase2: 256 }
+            5000: { phase1: 10, phase2: 8 },
+            10000: { phase1: 25, phase2: 10 },
+            25000: { phase1: 499, phase2: 250 },
+            50000: { phase1: 80, phase2: 40 },
+            100000: { phase1: 150, phase2: 100 },
+            200000: { phase1: 2199, phase2: 1200 }
           },
           'AGGRESSIVE_2STEP': {
-            5000: 16,
-            10000: 30,
-            25000: 73,
-            50000: 139,
-            100000: 276,
-            200000: 549
+            5000: 30,
+            10000: 55,
+            25000: 85,
+            50000: 155,
+            100000: 315,
+            200000: 2499
           },
           'SWING_PRO': {
             5000: 18,
@@ -309,10 +309,10 @@ export default function ChallengeTypes() {
             200000: 676
           },
           'ELITE_ROYAL': {
-            300000: 1699,
-            500000: 2499,
-            1000000: 3999,
-            2000000: 6999
+            300000: 0,
+            500000: 0,
+            1000000: 0,
+            2000000: 0
           },
           'COMPETITION': {
             100000: 9.99
@@ -851,46 +851,72 @@ export default function ChallengeTypes() {
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => handlePurchase(selectedTier)}
-                    className="w-full mt-6 py-4 btn-gradient text-xl font-bold flex items-center justify-center space-x-3 group"
-                  >
-                    <DollarSign size={24} />
-                    <span>Purchase Challenge - ${selectedTier.discount_price}</span>
-                    <ArrowRight size={24} className="group-hover:translate-x-1 transition-transform" />
-                  </button>
+                  {selectedChallenge.challenge_code === 'ELITE_ROYAL' ? (
+                    <div className="w-full mt-6 py-4 bg-yellow-500/20 border-2 border-yellow-500/50 rounded-xl text-xl font-bold flex items-center justify-center space-x-3">
+                      <span className="text-yellow-400">COMING SOON</span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handlePurchase(selectedTier)}
+                      className="w-full mt-6 py-4 btn-gradient text-xl font-bold flex items-center justify-center space-x-3 group"
+                    >
+                      <DollarSign size={24} />
+                      <span>Purchase Challenge - ${selectedTier.discount_price}</span>
+                      <ArrowRight size={24} className="group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  )}
                 </div>
               )}
 
               <div className="glass-card p-6 bg-yellow-500/10 border-yellow-500/30">
                 <h4 className="text-xl font-bold mb-3 flex items-center space-x-2">
                   <Trophy className="text-yellow-400" size={24} />
-                  <span>What's Included</span>
+                  <span>Challenge Rules & Payouts</span>
                 </h4>
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   <li className="flex items-start space-x-2">
                     <CheckCircle className="text-green-400 mt-0.5 flex-shrink-0" size={20} />
-                    <span>Unlimited trading time (where applicable)</span>
+                    <span>{selectedChallenge.challenge_code === 'AGGRESSIVE_2STEP' ? '21-day time limit' : 'Unlimited trading time (where applicable)'}</span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle className="text-green-400 mt-0.5 flex-shrink-0" size={20} />
                     <span>Trade all major forex pairs, commodities, indices, and crypto</span>
                   </li>
+                  {selectedChallenge.challenge_code === 'AGGRESSIVE_2STEP' ? (
+                    <li className="flex items-start space-x-2">
+                      <CheckCircle className="text-green-400 mt-0.5 flex-shrink-0" size={20} />
+                      <span className="font-semibold text-green-400">NO consistency rule - Trade however you want!</span>
+                    </li>
+                  ) : (
+                    <li className="flex items-start space-x-2">
+                      <CheckCircle className="text-yellow-400 mt-0.5 flex-shrink-0" size={20} />
+                      <div>
+                        <span className="font-semibold text-yellow-400">40% Consistency Rule:</span>
+                        <p className="text-sm text-gray-300 mt-1">No single winning day can contribute more than 40% of your total profit. This ensures consistent trading performance rather than relying on lucky days.</p>
+                      </div>
+                    </li>
+                  )}
                   <li className="flex items-start space-x-2">
                     <CheckCircle className="text-green-400 mt-0.5 flex-shrink-0" size={20} />
-                    <span>Keep 75-100% of profits based on payout cycle</span>
+                    <div>
+                      <span className="font-semibold">Payout Terms:</span>
+                      <p className="text-sm text-gray-300 mt-1">
+                        {selectedChallenge.challenge_code === 'CLASSIC_2STEP' && '14 days after your first trade'}
+                        {selectedChallenge.challenge_code === 'RAPID_FIRE' && 'First payout on-demand, then every 14 days'}
+                        {selectedChallenge.challenge_code === 'PAYG_2STEP' && 'ONE-TIME payout only - receive all profits in a single withdrawal'}
+                        {selectedChallenge.challenge_code === 'AGGRESSIVE_2STEP' && 'Flexible payout schedule after passing'}
+                        {selectedChallenge.challenge_code === 'ELITE_ROYAL' && 'Premium payout terms available upon launch'}
+                        {!['CLASSIC_2STEP', 'RAPID_FIRE', 'PAYG_2STEP', 'AGGRESSIVE_2STEP', 'ELITE_ROYAL'].includes(selectedChallenge.challenge_code) && 'Flexible payout schedule'}
+                      </p>
+                    </div>
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle className="text-green-400 mt-0.5 flex-shrink-0" size={20} />
-                    <span>Choose from weekly to bi-monthly payouts</span>
+                    <span>Keep 75-95% of profits based on account size</span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle className="text-green-400 mt-0.5 flex-shrink-0" size={20} />
-                    <span>No consistency rules or minimum days between trades</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <CheckCircle className="text-green-400 mt-0.5 flex-shrink-0" size={20} />
-                    <span>Real-time tracking dashboard</span>
+                    <span>Real-time trading dashboard with analytics</span>
                   </li>
                 </ul>
               </div>

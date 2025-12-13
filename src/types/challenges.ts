@@ -65,11 +65,11 @@ export const ACCOUNT_SIZES: AccountSize[] = [
   {
     size: 5000,
     pricing: {
-      standard: 49,
+      standard: 20,
       rapid: 99,
       scaling: 39,
-      professional: 199,
-      swing: 249,
+      professional: 10,
+      swing: 30,
       master: 149
     },
     profitSplit: {
@@ -93,8 +93,8 @@ export const ACCOUNT_SIZES: AccountSize[] = [
       standard: 79,
       rapid: 149,
       scaling: 49,
-      professional: 299,
-      swing: 349,
+      professional: 25,
+      swing: 55,
       master: 199
     },
     profitSplit: {
@@ -119,7 +119,7 @@ export const ACCOUNT_SIZES: AccountSize[] = [
       rapid: 249,
       scaling: 99,
       professional: 499,
-      swing: 599,
+      swing: 85,
       master: 329
     },
     profitSplit: {
@@ -140,11 +140,11 @@ export const ACCOUNT_SIZES: AccountSize[] = [
   {
     size: 50000,
     pricing: {
-      standard: 199,
-      rapid: 399,
+      standard: 125,
+      rapid: 83,
       scaling: 149,
-      professional: 799,
-      swing: 899,
+      professional: 80,
+      swing: 155,
       master: 549
     },
     profitSplit: {
@@ -165,11 +165,11 @@ export const ACCOUNT_SIZES: AccountSize[] = [
   {
     size: 100000,
     pricing: {
-      standard: 349,
-      rapid: 699,
+      standard: 225,
+      rapid: 149,
       scaling: 249,
-      professional: 1299,
-      swing: 1499,
+      professional: 150,
+      swing: 315,
       master: 899
     },
     profitSplit: {
@@ -233,6 +233,8 @@ export interface ChallengeType {
   timeLimit: number | null;
 
   consistencyScoreRequired: number;
+  consistencyRule?: string;
+  payoutInfo?: string;
   minSharpeRatio: number;
   minProfitFactor: number;
   minRiskRewardRatio: number;
@@ -248,15 +250,16 @@ export interface ChallengeType {
   badge?: string;
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced' | 'Professional' | 'Expert';
   recommended: boolean;
+  comingSoon?: boolean;
 }
 
 export const CHALLENGE_TYPES: ChallengeType[] = [
   {
     id: 'standard',
-    name: 'Standard Challenge',
-    displayName: 'Standard',
+    name: 'Classic Challenge',
+    displayName: 'Classic',
     tagline: 'Most Popular - Classic 2-Phase',
-    description: 'Our classic evaluation process. Pass two phases and get funded. Perfect for most traders.',
+    description: 'Our classic evaluation process with 40% consistency rule. Pass two phases and get funded. Perfect for most traders.',
 
     phases: 2,
     phase1Target: 8,
@@ -267,6 +270,8 @@ export const CHALLENGE_TYPES: ChallengeType[] = [
     timeLimit: null,
 
     consistencyScoreRequired: 7.5,
+    consistencyRule: '40% Rule: No single winning day can contribute more than 40% of your total profit. This ensures consistent trading performance rather than relying on lucky days.',
+    payoutInfo: 'Payouts processed 14 days after your first trade',
     minSharpeRatio: 1.2,
     minProfitFactor: 1.5,
     minRiskRewardRatio: 1.8,
@@ -282,8 +287,8 @@ export const CHALLENGE_TYPES: ChallengeType[] = [
       '8% → 5% profit targets',
       'No time pressure',
       'Free Phase 2',
-      'All strategies allowed',
-      'Unlimited attempts'
+      '40% consistency rule',
+      'Payout after 14 days'
     ],
     badge: 'MOST POPULAR',
     difficulty: 'Intermediate',
@@ -291,10 +296,10 @@ export const CHALLENGE_TYPES: ChallengeType[] = [
   },
   {
     id: 'rapid',
-    name: 'Rapid Challenge',
-    displayName: 'Rapid',
+    name: 'Rapid Fire Challenge',
+    displayName: 'Rapid Fire',
     tagline: 'Get Funded in 10 Days',
-    description: 'Fast-track to funding. One phase, 10 days. For experienced traders who want quick results.',
+    description: 'Fast-track to funding with 40% consistency rule. One phase, 10 days. For experienced traders who want quick results.',
 
     phases: 1,
     phase1Target: 10,
@@ -305,6 +310,8 @@ export const CHALLENGE_TYPES: ChallengeType[] = [
     timeLimit: 10,
 
     consistencyScoreRequired: 8.0,
+    consistencyRule: '40% Rule: No single winning day can contribute more than 40% of your total profit. This ensures consistent trading performance rather than relying on lucky days.',
+    payoutInfo: 'First payout: On-demand | Subsequent payouts: Every 14 days',
     minSharpeRatio: 1.5,
     minProfitFactor: 2.0,
     minRiskRewardRatio: 2.0,
@@ -320,8 +327,8 @@ export const CHALLENGE_TYPES: ChallengeType[] = [
       '10% single target',
       '10-day time limit',
       'Skip Phase 2',
-      'Higher profit split',
-      'Fast-track evaluation'
+      '40% consistency rule',
+      'On-demand first payout'
     ],
     badge: 'FAST TRACK',
     difficulty: 'Advanced',
@@ -332,7 +339,7 @@ export const CHALLENGE_TYPES: ChallengeType[] = [
     name: 'Scaling Challenge',
     displayName: 'Scaling',
     tagline: 'Start Small, Scale to $2M',
-    description: 'Lower targets, but prove consistency to scale up. Grow from $10K to $2M over time.',
+    description: 'Lower targets with 40% consistency rule. Prove consistency to scale up. Grow from $10K to $2M over time.',
 
     phases: 2,
     phase1Target: 6,
@@ -343,6 +350,8 @@ export const CHALLENGE_TYPES: ChallengeType[] = [
     timeLimit: null,
 
     consistencyScoreRequired: 8.0,
+    consistencyRule: '40% Rule: No single winning day can contribute more than 40% of your total profit. This ensures consistent trading performance rather than relying on lucky days.',
+    payoutInfo: 'Flexible payout schedule with highest profit splits',
     minSharpeRatio: 1.4,
     minProfitFactor: 1.8,
     minRiskRewardRatio: 1.8,
@@ -357,9 +366,9 @@ export const CHALLENGE_TYPES: ChallengeType[] = [
     features: [
       '6% → 6% profit targets',
       'Lowest entry cost',
-      'Highest profit split (90-95%)',
+      '40% consistency rule',
       'Scale to $2M',
-      'Growth focused'
+      '90-95% profit split'
     ],
     badge: 'BEST VALUE',
     difficulty: 'Intermediate',
@@ -367,20 +376,22 @@ export const CHALLENGE_TYPES: ChallengeType[] = [
   },
   {
     id: 'professional',
-    name: 'Professional Challenge',
-    displayName: 'Professional',
-    tagline: 'One Phase, Full Transparency',
-    description: 'All advanced metrics visible upfront. Single 12% target. For serious professionals.',
+    name: 'Pay As You Go Challenge',
+    displayName: 'Pay As You Go',
+    tagline: 'Affordable Entry - Pay Per Phase',
+    description: 'Pay separately for each phase with 40% consistency rule. Perfect for budget-conscious traders. ONE-TIME payout only.',
 
-    phases: 1,
-    phase1Target: 12,
-    phase2Target: null,
-    maxDrawdown: 8,
-    dailyLoss: 4,
-    minTradingDays: 10,
+    phases: 2,
+    phase1Target: 8,
+    phase2Target: 5,
+    maxDrawdown: 6,
+    dailyLoss: 3,
+    minTradingDays: 5,
     timeLimit: null,
 
     consistencyScoreRequired: 7.5,
+    consistencyRule: '40% Rule: No single winning day can contribute more than 40% of your total profit. This ensures consistent trading performance rather than relying on lucky days.',
+    payoutInfo: 'ONE-TIME PAYOUT ONLY: You can request one single payout to receive all accumulated profits. No recurring payouts available with this challenge type.',
     minSharpeRatio: 1.3,
     minProfitFactor: 1.8,
     minRiskRewardRatio: 2.0,
@@ -393,22 +404,22 @@ export const CHALLENGE_TYPES: ChallengeType[] = [
     maxStopLossPips: 250,
 
     features: [
-      '12% single phase',
-      'All metrics visible',
-      'More flexible rules',
-      '90-95% profit split',
-      'Professional standards'
+      'Pay per phase',
+      'Lower upfront cost',
+      '40% consistency rule',
+      'One-time payout only',
+      '90-95% profit split'
     ],
-    badge: 'PRO LEVEL',
-    difficulty: 'Professional',
+    badge: 'BEST VALUE',
+    difficulty: 'Intermediate',
     recommended: false
   },
   {
     id: 'swing',
-    name: 'Swing Trader Challenge',
-    displayName: 'Swing',
-    tagline: 'For Position Traders',
-    description: 'Designed for swing traders. Higher targets, wider stops, longer timeframes. 60-day evaluation.',
+    name: 'Aggressive Challenge',
+    displayName: 'Aggressive',
+    tagline: 'No Consistency Rule - 21 Days',
+    description: 'Aggressive 2-phase challenge with NO consistency rule. Trade however you want! Complete within 21 days.',
 
     phases: 2,
     phase1Target: 15,
@@ -416,28 +427,30 @@ export const CHALLENGE_TYPES: ChallengeType[] = [
     maxDrawdown: 10,
     dailyLoss: 5,
     minTradingDays: 10,
-    timeLimit: 60,
+    timeLimit: 21,
 
-    consistencyScoreRequired: 7.5,
+    consistencyScoreRequired: 0,
+    consistencyRule: undefined,
+    payoutInfo: 'Flexible payout schedule after passing evaluation',
     minSharpeRatio: 1.0,
     minProfitFactor: 2.0,
     minRiskRewardRatio: 2.5,
     optimalWinRateMin: 40,
     optimalWinRateMax: 60,
-    maxTradesPerDay: 5,
+    maxTradesPerDay: 20,
     maxPositionSizeJump: 30,
     requiresStopLoss: true,
     minStopLossPips: 30,
     maxStopLossPips: 500,
 
     features: [
+      'NO consistency rule',
+      '21-day time limit',
       '15% → 10% targets',
-      '60-day timeframe',
-      'Wider stops allowed',
-      'Lower trade frequency',
-      'Position trading focused'
+      'Trade your way',
+      'Maximum flexibility'
     ],
-    badge: 'SWING TRADERS',
+    badge: 'NO LIMITS',
     difficulty: 'Advanced',
     recommended: false
   },
@@ -457,6 +470,8 @@ export const CHALLENGE_TYPES: ChallengeType[] = [
     timeLimit: 30,
 
     consistencyScoreRequired: 0,
+    consistencyRule: undefined,
+    payoutInfo: 'Flexible payout schedule with premium splits',
     minSharpeRatio: 0,
     minProfitFactor: 0,
     minRiskRewardRatio: 0,
@@ -480,6 +495,47 @@ export const CHALLENGE_TYPES: ChallengeType[] = [
     badge: 'RECOMMENDED',
     difficulty: 'Expert',
     recommended: true
+  },
+  {
+    id: 'elite',
+    name: 'Elite Challenge',
+    displayName: 'Elite',
+    tagline: 'COMING SOON',
+    description: 'Premium institutional-level challenge for elite traders. High capital, exclusive features, and premium support.',
+
+    phases: 2,
+    phase1Target: 10,
+    phase2Target: 5,
+    maxDrawdown: 8,
+    dailyLoss: 4,
+    minTradingDays: 5,
+    timeLimit: null,
+
+    consistencyScoreRequired: 8.0,
+    consistencyRule: '40% Rule: No single winning day can contribute more than 40% of your total profit. This ensures consistent trading performance rather than relying on lucky days.',
+    payoutInfo: 'Premium payout terms available upon launch',
+    minSharpeRatio: 1.5,
+    minProfitFactor: 2.0,
+    minRiskRewardRatio: 2.0,
+    optimalWinRateMin: 50,
+    optimalWinRateMax: 70,
+    maxTradesPerDay: 10,
+    maxPositionSizeJump: 30,
+    requiresStopLoss: true,
+    minStopLossPips: 15,
+    maxStopLossPips: 250,
+
+    features: [
+      'COMING SOON',
+      'Elite institutional capital',
+      'Premium support',
+      'Exclusive features',
+      'Higher capital limits'
+    ],
+    badge: 'COMING SOON',
+    difficulty: 'Expert',
+    recommended: false,
+    comingSoon: true
   }
 ];
 
